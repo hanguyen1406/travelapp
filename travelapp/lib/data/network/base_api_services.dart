@@ -1,1 +1,4 @@
-// File trống theo yêu cầu reset dự án
+abstract class BaseApiServices {
+  Future<dynamic> getGetApiResponse(String url);
+  Future<dynamic> getPostApiResponse(String url, dynamic data);
+}
