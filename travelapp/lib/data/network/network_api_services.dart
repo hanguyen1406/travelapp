@@ -1,98 +1,55 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'base_api_services.dart';
+import 'package:travelapp/data/app_exceptions.dart';
+import 'package:travelapp/data/network/base_api_services.dart';
 
-class NetworkApiService extends BaseApiServices {
-  static const String baseUrl = 'http://10.0.2.2:8080/api'; // For Android emulator
-  // For iOS simulator or real device, use: 'http://localhost:8080/api'
-
+class NetworkApiServices extends BaseApiServices {
   @override
-  Future<dynamic> getApi(String url) async {
+  Future getGetApiResponse(String url) async {
+    dynamic responseJson;
     try {
-      final response = await http.get(
-        Uri.parse(baseUrl + url),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      ).timeout(const Duration(seconds: 10));
-
-      return _handleResponse(response);
-    } catch (e) {
-      throw Exception('Error: $e');
+      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
+      responseJson = returnResponse(response);
+    } on SocketException {
+      throw FetchDataException('No Internet Connection');
+    } catch(e) {
+      throw FetchDataException(e.toString());
     }
+    return responseJson;
   }
 
   @override
-  Future<dynamic> postApi(String url, dynamic data) async {
+  Future getPostApiResponse(String url, dynamic data) async {
+    dynamic responseJson;
     try {
       final response = await http.post(
-        Uri.parse(baseUrl + url),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        Uri.parse(url),
         body: jsonEncode(data),
+        headers: {'Content-Type': 'application/json'},
       ).timeout(const Duration(seconds: 10));
-
-      return _handleResponse(response);
-    } catch (e) {
-      throw Exception('Error: $e');
+      responseJson = returnResponse(response);
+    } on SocketException {
+      throw FetchDataException('No Internet Connection');
+    } catch(e) {
+       throw FetchDataException(e.toString());
     }
+    return responseJson;
   }
 
-  @override
-  Future<dynamic> postApiWithToken(String url, dynamic data, String token) async {
-    try {
-      final response = await http.post(
-        Uri.parse(baseUrl + url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(data),
-      ).timeout(const Duration(seconds: 10));
-
-      return _handleResponse(response);
-    } catch (e) {
-      throw Exception('Error: $e');
-    }
-  }
-
-  @override
-  Future<dynamic> getApiWithToken(String url, String token) async {
-    try {
-      final response = await http.get(
-        Uri.parse(baseUrl + url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      ).timeout(const Duration(seconds: 10));
-
-      return _handleResponse(response);
-    } catch (e) {
-      throw Exception('Error: $e');
-    }
-  }
-
-  dynamic _handleResponse(http.Response response) {
+  dynamic returnResponse(http.Response response) {
     switch (response.statusCode) {
       case 200:
-      case 201:
-        return jsonDecode(response.body);
+        return jsonDecode(response.body); // Directly return decoded JSON
       case 400:
-        throw Exception(
-          jsonDecode(response.body)['message'] ?? 'Bad Request',
-        );
+        throw BadRequestException(response.body.toString());
       case 401:
-        throw Exception('Unauthorized');
       case 403:
-        throw Exception('Forbidden');
-      case 404:
-        throw Exception('Not Found');
+        throw UnauthorisedException(response.body.toString());
       case 500:
-        throw Exception('Internal Server Error');
       default:
-        throw Exception('Unknown error occurred');
+        throw FetchDataException(
+            'Error occurred while communicating with server with status code : ${response.statusCode}');
     }
   }
 }
