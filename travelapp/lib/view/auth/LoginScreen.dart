@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:travelapp/viewModel/auth_view_model.dart';
+import 'SignupScreen.dart';
 
 class LoginScreen extends StatefulWidget {
 	const LoginScreen({Key? key}) : super(key: key);
@@ -8,13 +11,13 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-	final _emailController = TextEditingController();
+	final _usernameController = TextEditingController();
 	final _passwordController = TextEditingController();
 	bool _obscurePassword = true;
 
 	@override
 	void dispose() {
-		_emailController.dispose();
+		_usernameController.dispose();
 		_passwordController.dispose();
 		super.dispose();
 	}
@@ -100,14 +103,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
 												const SizedBox(height: 22),
 
-												// Email field
+												// Username field
 												TextField(
-													controller: _emailController,
-													keyboardType: TextInputType.emailAddress,
+													controller: _usernameController,
+													keyboardType: TextInputType.text,
 													decoration: InputDecoration(
-														labelText: 'Email',
-														hintText: 'your.email@example.com',
-														prefixIcon: const Icon(Icons.email_outlined),
+														labelText: 'Username',
+														hintText: 'your.username',
+														prefixIcon: const Icon(Icons.person_outline),
 														filled: true,
 														fillColor: const Color(0xFFF6F8FB),
 														border: OutlineInputBorder(
@@ -160,21 +163,63 @@ class _LoginScreenState extends State<LoginScreen> {
 												const SizedBox(height: 6),
 
 												// Login button
-												SizedBox(
-													width: double.infinity,
-													child: ElevatedButton(
-														onPressed: () {},
-														style: ElevatedButton.styleFrom(
-															backgroundColor: const Color(0xFF1E90FF),
-															padding: const EdgeInsets.symmetric(vertical: 14),
-															shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-															elevation: 2,
-														),
-														child: const Text(
-															'Đăng nhập',
-															style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-														),
-													),
+												Consumer<AuthViewModel>(
+													builder: (context, authViewModel, _) {
+														return SizedBox(
+															width: double.infinity,
+															child: ElevatedButton(
+																onPressed: authViewModel.isLoading
+																	? null
+																	: () => _handleLogin(context, authViewModel),
+																style: ElevatedButton.styleFrom(
+																	backgroundColor: const Color(0xFF1E90FF),
+																	padding: const EdgeInsets.symmetric(vertical: 14),
+																	shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+																	elevation: 2,
+																),
+																child: authViewModel.isLoading
+																	? const SizedBox(
+																		height: 20,
+																		width: 20,
+																		child: CircularProgressIndicator(
+																			strokeWidth: 2,
+																			valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+																		),
+																	)
+																	: const Text(
+																		'Đăng nhập',
+																		style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+																	),
+															),
+														);
+													},
+												),
+												
+												// Error message
+												Consumer<AuthViewModel>(
+													builder: (context, authViewModel, _) {
+														if (authViewModel.errorMessage != null) {
+															return Padding(
+																padding: const EdgeInsets.only(top: 12),
+																child: Container(
+																	padding: const EdgeInsets.all(12),
+																	decoration: BoxDecoration(
+																		color: Colors.red.withOpacity(0.1),
+																		borderRadius: BorderRadius.circular(8),
+																		border: Border.all(color: Colors.red.withOpacity(0.3)),
+																	),
+																	child: Text(
+																		authViewModel.errorMessage!,
+																		style: const TextStyle(
+																			color: Colors.red,
+																			fontSize: 12,
+																		),
+																	),
+																),
+															);
+														}
+														return const SizedBox.shrink();
+													},
 												),
 
 												const SizedBox(height: 14),
@@ -185,7 +230,11 @@ class _LoginScreenState extends State<LoginScreen> {
 														children: [
 															const Text('Chưa có tài khoản? ', style: TextStyle(color: Colors.black54)),
 															TextButton(
-																onPressed: () {},
+																onPressed: () {
+																	Navigator.of(context).push(
+																		MaterialPageRoute(builder: (context) => const SignupScreen()),
+																	);
+																},
 																style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(44, 28), tapTargetSize: MaterialTapTargetSize.shrinkWrap),
 																child: const Text('Đăng ký', style: TextStyle(color: Color(0xFF1E90FF))),
 															),
@@ -206,5 +255,20 @@ class _LoginScreenState extends State<LoginScreen> {
 			),
 		);
 	}
-}
 
+	void _handleLogin(BuildContext context, AuthViewModel authViewModel) {
+		if (_usernameController.text.isEmpty || _passwordController.text.isEmpty) {
+			ScaffoldMessenger.of(context).showSnackBar(
+				const SnackBar(
+					content: Text('Vui lòng điền đầy đủ thông tin đăng nhập'),
+					backgroundColor: Colors.red,
+				),
+			);
+			return;
+		}
+
+		authViewModel.login(
+			_usernameController.text,
+			_passwordController.text,
+		);
+	}}
