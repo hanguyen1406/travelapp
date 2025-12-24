@@ -5,9 +5,10 @@ import '../data/request/login_request.dart';
 import '../data/request/signup_request.dart';
 import '../data/response/login_response.dart';
 import '../data/response/message_response.dart';
+import '../utils/app_config.dart';
 
 class AuthViewModel extends ChangeNotifier {
-  final NetworkApiService _apiService = NetworkApiService();
+  final NetworkApiServices _apiService = NetworkApiServices();
 
   bool _isLoading = false;
   String? _token;
@@ -47,8 +48,8 @@ class AuthViewModel extends ChangeNotifier {
         password: password,
       );
 
-      final response = await _apiService.postApi(
-        '/auth/login',
+      final response = await _apiService.getPostApiResponse(
+        '${AppConfig.baseUrl}/auth/login',
         loginRequest.toJson(),
       );
 
@@ -88,8 +89,8 @@ class AuthViewModel extends ChangeNotifier {
         phone: phone,
       );
 
-      final response = await _apiService.postApi(
-        '/auth/register',
+      final response = await _apiService.getPostApiResponse(
+        '${AppConfig.baseUrl}/auth/register',
         signupRequest.toJson(),
       );
 
@@ -122,3 +123,4 @@ class AuthViewModel extends ChangeNotifier {
     return _token != null && _token!.isNotEmpty;
   }
 }
+

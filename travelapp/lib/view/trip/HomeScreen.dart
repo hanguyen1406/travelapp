@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:travelapp/viewModel/trip_view_model.dart';
+import 'package:travelapp/viewModel/auth_view_model.dart';
 import 'package:travelapp/view/trip/TripDashboard.dart';
-import 'package:intl/intl.dart';
+import 'package:travelapp/view/auth/LoginScreen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -154,8 +155,35 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () {},
           ),
           IconButton(
-            icon: const Icon(Icons.settings_outlined, size: 28),
-            onPressed: () {},
+            icon: const Icon(Icons.logout_outlined, size: 24),
+            onPressed: () => _handleLogout(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleLogout(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Đăng xuất'),
+        content: const Text('Bạn chắc chắn muốn đăng xuất không?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () {
+              Provider.of<AuthViewModel>(context, listen: false).logout();
+              Navigator.pop(context);
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => LoginScreen()),
+              );
+            },
+            child: const Text('Đăng xuất'),
           ),
         ],
       ),

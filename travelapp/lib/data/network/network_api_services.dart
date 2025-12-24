@@ -20,6 +20,26 @@ class NetworkApiServices extends BaseApiServices {
   }
 
   @override
+  Future getGetApiResponseWithToken(String url, String token) async {
+    dynamic responseJson;
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 10));
+      responseJson = returnResponse(response);
+    } on SocketException {
+      throw FetchDataException('No Internet Connection');
+    } catch(e) {
+      throw FetchDataException(e.toString());
+    }
+    return responseJson;
+  }
+
+  @override
   Future getPostApiResponse(String url, dynamic data) async {
     dynamic responseJson;
     try {
@@ -27,6 +47,27 @@ class NetworkApiServices extends BaseApiServices {
         Uri.parse(url),
         body: jsonEncode(data),
         headers: {'Content-Type': 'application/json'},
+      ).timeout(const Duration(seconds: 10));
+      responseJson = returnResponse(response);
+    } on SocketException {
+      throw FetchDataException('No Internet Connection');
+    } catch(e) {
+       throw FetchDataException(e.toString());
+    }
+    return responseJson;
+  }
+
+  @override
+  Future getPostApiResponseWithToken(String url, dynamic data, String token) async {
+    dynamic responseJson;
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        body: jsonEncode(data),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
       ).timeout(const Duration(seconds: 10));
       responseJson = returnResponse(response);
     } on SocketException {
@@ -53,3 +94,4 @@ class NetworkApiServices extends BaseApiServices {
     }
   }
 }
+

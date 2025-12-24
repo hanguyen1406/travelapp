@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:travelapp/viewModel/auth_view_model.dart';
+import 'package:travelapp/view/trip/HomeScreen.dart';
 import 'SignupScreen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -16,9 +17,31 @@ class _LoginScreenState extends State<LoginScreen> {
 	bool _obscurePassword = true;
 
 	@override
+	void initState() {
+		super.initState();
+		// Listen to auth state changes
+		WidgetsBinding.instance.addPostFrameCallback((_) {
+			final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
+			authViewModel.addListener(_onAuthStateChanged);
+		});
+	}
+
+	void _onAuthStateChanged() {
+		final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
+		if (authViewModel.isLoggedIn()) {
+			// Navigate to HomeScreen and remove login screen from stack
+			Navigator.of(context).pushReplacement(
+				MaterialPageRoute(builder: (context) => const HomeScreen()),
+			);
+		}
+	}
+
+	@override
 	void dispose() {
 		_usernameController.dispose();
 		_passwordController.dispose();
+		final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
+		authViewModel.removeListener(_onAuthStateChanged);
 		super.dispose();
 	}
 
@@ -267,6 +290,7 @@ class _LoginScreenState extends State<LoginScreen> {
 			return;
 		}
 
+		// Call login - navigation will happen via listener
 		authViewModel.login(
 			_usernameController.text,
 			_passwordController.text,
