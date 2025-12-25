@@ -1,5 +1,8 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:travelapp/viewModel/auth_view_model.dart';
+import 'LoginScreen.dart';
 
 class SignupScreen extends StatefulWidget {
 	const SignupScreen({Key? key}) : super(key: key);
@@ -10,15 +13,21 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen> {
 	final _nameController = TextEditingController();
+	final _surnameController = TextEditingController();
+	final _usernameController = TextEditingController();
 	final _emailController = TextEditingController();
 	final _passwordController = TextEditingController();
+	final _phoneController = TextEditingController();
 	bool _obscurePassword = true;
 
 	@override
 	void dispose() {
 		_nameController.dispose();
+		_surnameController.dispose();
+		_usernameController.dispose();
 		_emailController.dispose();
 		_passwordController.dispose();
+		_phoneController.dispose();
 		super.dispose();
 	}
 
@@ -94,8 +103,38 @@ class _SignupScreenState extends State<SignupScreen> {
 												TextField(
 													controller: _nameController,
 													decoration: InputDecoration(
-														hintText: 'John Doe',
+														hintText: 'John',
 														prefixIcon: const Icon(Icons.person_outline),
+														filled: true,
+														fillColor: const Color(0xFFF6F8FB),
+														border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+													),
+												),
+
+												const SizedBox(height: 12),
+
+												const Text('Surname', style: TextStyle(fontSize: 13, color: Colors.black87)),
+												const SizedBox(height: 6),
+												TextField(
+													controller: _surnameController,
+													decoration: InputDecoration(
+														hintText: 'Doe',
+														prefixIcon: const Icon(Icons.person_outline),
+														filled: true,
+														fillColor: const Color(0xFFF6F8FB),
+														border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+													),
+												),
+
+												const SizedBox(height: 12),
+
+												const Text('Username', style: TextStyle(fontSize: 13, color: Colors.black87)),
+												const SizedBox(height: 6),
+												TextField(
+													controller: _usernameController,
+													decoration: InputDecoration(
+														hintText: 'johndoe',
+														prefixIcon: const Icon(Icons.alternate_email),
 														filled: true,
 														fillColor: const Color(0xFFF6F8FB),
 														border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
@@ -112,6 +151,22 @@ class _SignupScreenState extends State<SignupScreen> {
 													decoration: InputDecoration(
 														hintText: 'your.email@example.com',
 														prefixIcon: const Icon(Icons.email_outlined),
+														filled: true,
+														fillColor: const Color(0xFFF6F8FB),
+														border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+													),
+												),
+
+												const SizedBox(height: 12),
+
+												const Text('Phone', style: TextStyle(fontSize: 13, color: Colors.black87)),
+												const SizedBox(height: 6),
+												TextField(
+													controller: _phoneController,
+													keyboardType: TextInputType.phone,
+													decoration: InputDecoration(
+														hintText: '+84 123 456 789',
+														prefixIcon: const Icon(Icons.phone_outlined),
 														filled: true,
 														fillColor: const Color(0xFFF6F8FB),
 														border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
@@ -166,16 +221,78 @@ class _SignupScreenState extends State<SignupScreen> {
 
 												const SizedBox(height: 18),
 
-												SizedBox(
-													width: double.infinity,
-													child: ElevatedButton(
-														onPressed: () {},
-														style: ElevatedButton.styleFrom(
-															backgroundColor: const Color(0xFF1E90FF),
-															padding: const EdgeInsets.symmetric(vertical: 14),
-															shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-														),
-														child: const Text('Đăng ký', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+												// Signup button
+												Consumer<AuthViewModel>(
+													builder: (context, authViewModel, _) {
+														return SizedBox(
+															width: double.infinity,
+															child: ElevatedButton(
+																onPressed: authViewModel.isLoading
+																	? null
+																	: () => _handleSignup(context, authViewModel),
+																style: ElevatedButton.styleFrom(
+																	backgroundColor: const Color(0xFF1E90FF),
+																	padding: const EdgeInsets.symmetric(vertical: 14),
+																	shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+																),
+																child: authViewModel.isLoading
+																	? const SizedBox(
+																		height: 20,
+																		width: 20,
+																		child: CircularProgressIndicator(
+																			strokeWidth: 2,
+																			valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+																		),
+																	)
+																	: const Text('Đăng ký', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+															),
+														);
+													},
+												),
+
+												// Error message
+												Consumer<AuthViewModel>(
+													builder: (context, authViewModel, _) {
+														if (authViewModel.errorMessage != null) {
+															return Padding(
+																padding: const EdgeInsets.only(top: 12),
+																child: Container(
+																	padding: const EdgeInsets.all(12),
+																	decoration: BoxDecoration(
+																		color: Colors.red.withOpacity(0.1),
+																		borderRadius: BorderRadius.circular(8),
+																		border: Border.all(color: Colors.red.withOpacity(0.3)),
+																	),
+																	child: Text(
+																		authViewModel.errorMessage!,
+																		style: const TextStyle(
+																			color: Colors.red,
+																			fontSize: 12,
+																		),
+																	),
+																),
+															);
+														}
+														return const SizedBox.shrink();
+													},
+												),
+
+												const SizedBox(height: 16),
+
+												// Back to login link
+												Center(
+													child: Row(
+														mainAxisSize: MainAxisSize.min,
+														children: [
+															const Text('Đã có tài khoản? ', style: TextStyle(color: Colors.black54)),
+															TextButton(
+																onPressed: () {
+																	Navigator.of(context).pop();
+																},
+																style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(44, 28), tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+																child: const Text('Đăng nhập', style: TextStyle(color: Color(0xFF1E90FF))),
+															),
+														],
 													),
 												),
 											],
@@ -191,5 +308,51 @@ class _SignupScreenState extends State<SignupScreen> {
 			),
 		);
 	}
-}
 
+	void _handleSignup(BuildContext context, AuthViewModel authViewModel) {
+		if (_nameController.text.isEmpty ||
+			_surnameController.text.isEmpty ||
+			_usernameController.text.isEmpty ||
+			_emailController.text.isEmpty ||
+			_passwordController.text.isEmpty ||
+			_phoneController.text.isEmpty) {
+			ScaffoldMessenger.of(context).showSnackBar(
+				const SnackBar(
+					content: Text('Vui lòng điền đầy đủ thông tin'),
+					backgroundColor: Colors.red,
+				),
+			);
+			return;
+		}
+
+		if (_passwordController.text.length < 8) {
+			ScaffoldMessenger.of(context).showSnackBar(
+				const SnackBar(
+					content: Text('Mật khẩu phải có ít nhất 8 ký tự'),
+					backgroundColor: Colors.red,
+				),
+			);
+			return;
+		}
+
+		authViewModel.signup(
+			_nameController.text,
+			_surnameController.text,
+			_usernameController.text,
+			_emailController.text,
+			_passwordController.text,
+			_phoneController.text,
+		).then((success) {
+			if (success && mounted) {
+				ScaffoldMessenger.of(context).showSnackBar(
+					const SnackBar(
+						content: Text('Đăng ký thành công! Vui lòng đăng nhập.'),
+						backgroundColor: Colors.green,
+					),
+				);
+				Navigator.of(context).pushReplacement(
+					MaterialPageRoute(builder: (context) => const LoginScreen()),
+				);
+			}
+		});
+	}}

@@ -21,6 +21,9 @@ public class Itinerary {
     private Double locationLat;
     private Double locationLng;
     private Integer dayNumber;
+    private String city;
+    private String destination;
+    private String country;
 
     @Enumerated(EnumType.STRING)
     private Status status = Status.PENDING;
@@ -73,6 +76,15 @@ public class Itinerary {
 
     public Integer getDayNumber() { return dayNumber; }
     public void setDayNumber(Integer dayNumber) { this.dayNumber = dayNumber; }
+
+    public String getCity() { return city; }
+    public void setCity(String city) { this.city = city; }
+
+    public String getDestination() { return destination; }
+    public void setDestination(String destination) { this.destination = destination; }
+
+    public String getCountry() { return country; }
+    public void setCountry(String country) { this.country = country; }
 
     public Status getStatus() { return status; }
     public void setStatus(Status status) { this.status = status; }
