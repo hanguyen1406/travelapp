@@ -60,4 +60,20 @@ public class UserService {
 		return userRepository.countUser(name, surname, roleId);
 	}
 
+	public int getTotalTripsByUser(Long userId) {
+		return userRepository.getTotalTripsByUser(userId);
+	}
+
+	public int getCompletedTripsByUser(Long userId) {
+		return userRepository.getCompletedTripsByUser(userId);
+	}
+
+	public int getTotalCountriesByUser(Long userId) {
+		return userRepository.getTotalCountriesByUser(userId);
+	}
+
+	public int getTotalCitiesByUser(Long userId) {
+		return userRepository.getTotalCitiesByUser(userId);
+	}
+
 }

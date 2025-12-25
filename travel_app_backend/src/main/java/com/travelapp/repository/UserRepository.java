@@ -33,4 +33,20 @@ public interface UserRepository extends PagingAndSortingRepository<User, Long> {
     			 + "WHERE UPPER(users.name) like CONCAT('%',UPPER(:name),'%') and UPPER(users.surname) like CONCAT('%',UPPER(:surname),'%') AND user_roles.role_id LIKE CONCAT('%',:roleId,'%')", nativeQuery = true)
     Page<User> findByNameAndSurname(@Param("name") String name, @Param("surname") String surname, @Param("roleId") String roleId, Pageable pageable);
 	
+	@Query(value = "SELECT COUNT(*) FROM trips WHERE created_by = :userId", nativeQuery = true)
+	int getTotalTripsByUser(@Param("userId") Long userId);
+	
+	@Query(value = "SELECT COUNT(*) FROM trips WHERE created_by = :userId AND end_date < NOW()", nativeQuery = true)
+	int getCompletedTripsByUser(@Param("userId") Long userId);
+	
+	@Query(value = "SELECT COUNT(DISTINCT i.destination) FROM trips t " +
+			"INNER JOIN itineraries i ON t.id = i.trip_id " +
+			"WHERE t.created_by = :userId", nativeQuery = true)
+	int getTotalCountriesByUser(@Param("userId") Long userId);
+	
+	@Query(value = "SELECT COUNT(DISTINCT i.city) FROM trips t " +
+			"INNER JOIN itineraries i ON t.id = i.trip_id " +
+			"WHERE t.created_by = :userId", nativeQuery = true)
+	int getTotalCitiesByUser(@Param("userId") Long userId);
+	
 }

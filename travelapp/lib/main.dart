@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:travelapp/viewModel/auth_view_model.dart';
+import 'package:travelapp/viewModel/trip_view_model.dart';
 import 'view/auth/LoginScreen.dart';
 
 
@@ -16,6 +17,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthViewModel()),
+        ChangeNotifierProvider(create: (_) => TripViewModel()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
