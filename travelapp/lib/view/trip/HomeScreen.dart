@@ -4,6 +4,7 @@ import 'package:travelapp/viewModel/trip_view_model.dart';
 import 'package:travelapp/viewModel/auth_view_model.dart';
 import 'package:travelapp/view/trip/TripDashboard.dart';
 import 'package:travelapp/view/auth/LoginScreen.dart';
+import 'package:travelapp/view/user/ProfileScreen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -152,38 +153,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
-            onPressed: () {},
+            onPressed: () {
+              // Navigate to notifications
+            },
           ),
           IconButton(
-            icon: const Icon(Icons.logout_outlined, size: 24),
-            onPressed: () => _handleLogout(context),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _handleLogout(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Đăng xuất'),
-        content: const Text('Bạn chắc chắn muốn đăng xuất không?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy'),
-          ),
-          TextButton(
+            icon: const Icon(Icons.settings_outlined, size: 24),
             onPressed: () {
-              Provider.of<AuthViewModel>(context, listen: false).logout();
-              Navigator.pop(context);
-              Navigator.pushReplacement(
+              Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => LoginScreen()),
+                MaterialPageRoute(builder: (context) => const ProfileScreen()),
               );
             },
-            child: const Text('Đăng xuất'),
           ),
         ],
       ),

@@ -6,6 +6,7 @@ import '../data/request/signup_request.dart';
 import '../data/response/login_response.dart';
 import '../data/response/message_response.dart';
 import '../utils/app_config.dart';
+import '../view/user/ProfileScreen.dart';
 
 class AuthViewModel extends ChangeNotifier {
   final NetworkApiServices _apiService = NetworkApiServices();
@@ -121,6 +122,24 @@ class AuthViewModel extends ChangeNotifier {
 
   bool isLoggedIn() {
     return _token != null && _token!.isNotEmpty;
+  }
+
+  Future<UserProfile?> getUserProfile() async {
+    try {
+      if (_loginResponse?.user?.username == null) {
+        throw Exception('Username not found');
+      }
+
+      final response = await _apiService.getGetApiResponse(
+        '${AppConfig.baseUrl}/api/users/profile/${_loginResponse!.user!.username}',
+      );
+
+      return UserProfile.fromJson(response);
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      notifyListeners();
+      return null;
+    }
   }
 }
 
