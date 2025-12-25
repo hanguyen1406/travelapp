@@ -18,6 +18,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthViewModel()),
         ChangeNotifierProvider(create: (_) => TripViewModel()),
+        ChangeNotifierProvider(create: (_) => ItineraryViewModel()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

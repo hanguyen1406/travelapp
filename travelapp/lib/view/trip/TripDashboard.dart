@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:travelapp/models/trip_model.dart';
 import 'package:travelapp/viewModel/trip_view_model.dart';
+import 'package:travelapp/view/itinerary/ItineraryScreen.dart';
 import 'package:intl/intl.dart';
 
 class TripDashboard extends StatefulWidget {
@@ -253,6 +254,13 @@ class _TripDashboardState extends State<TripDashboard> {
           Colors.blue[100]!,
           Colors.blue,
           trip.itineraryCount,
+          onTap: () {
+             // Navigate to Itinerary Screen
+             Navigator.push(
+               context,
+               MaterialPageRoute(builder: (_) => ItineraryScreen(tripId: trip.id)),
+             );
+          },
         ),
         _buildGridItem(
           "Chi phí",
@@ -279,8 +287,10 @@ class _TripDashboardState extends State<TripDashboard> {
     );
   }
 
-  Widget _buildGridItem(String title, IconData icon, Color bgColor, Color iconColor, int count) {
-    return Container(
+  Widget _buildGridItem(String title, IconData icon, Color bgColor, Color iconColor, int count, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -341,7 +351,8 @@ class _TripDashboardState extends State<TripDashboard> {
           ),
         ],
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildSyncedBadge() {
