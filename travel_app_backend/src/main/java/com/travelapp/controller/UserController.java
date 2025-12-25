@@ -26,12 +26,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.travelapp.dto.RoleDTO;
 import com.travelapp.dto.UserDTO;
+import com.travelapp.dto.UserProfileDTO;
 import com.travelapp.model.ERole;
 import com.travelapp.model.MessageResponse;
 import com.travelapp.model.Role;
 import com.travelapp.model.User;
 import com.travelapp.service.RoleService;
 import com.travelapp.service.UserService;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
@@ -172,6 +175,44 @@ public class UserController {
 	public int countUser(@RequestParam(name = "name") String name, @RequestParam(name = "surname") String surname,
 			@RequestParam(name = "roleId") String roleId) {
 		return userService.countUser(name, surname, roleId);
+	}
+
+	@GetMapping("/profile/{username}")
+	public ResponseEntity<?> getUserProfile(@PathVariable("username") String username) {
+		Optional<User> user = userService.findByUsername(username);
+		if (user.isPresent()) {
+			User foundUser = user.get();
+			// Format join date
+			String joinDate = "Hãn gia từ tháng 1 năm 2024";
+			if (foundUser.getDateOfBirth() != null) {
+				SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+				joinDate = "Tham gia từ: " + sdf.format(foundUser.getDateOfBirth());
+			}
+
+			// Get statistics from trips (assuming trips have userId and status)
+			int totalTrips = userService.getTotalTripsByUser(foundUser.getId());
+			int completedTrips = userService.getCompletedTripsByUser(foundUser.getId());
+			int ongoingTrips = totalTrips - completedTrips;
+			int totalCountries = userService.getTotalCountriesByUser(foundUser.getId());
+			int totalCities = userService.getTotalCitiesByUser(foundUser.getId());
+
+			UserProfileDTO profileDTO = new UserProfileDTO(
+					foundUser.getId(),
+					foundUser.getName(),
+					foundUser.getEmail(),
+					foundUser.getUsername(),
+					foundUser.getPhone(),
+					joinDate,
+					totalTrips,
+					totalCountries,
+					totalCities,
+					ongoingTrips,
+					completedTrips
+			);
+
+			return new ResponseEntity<>(profileDTO, HttpStatus.OK);
+		}
+		return new ResponseEntity<>(new MessageResponse("Người dùng không tìm thấy!"), HttpStatus.NOT_FOUND);
 	}
 
 }
