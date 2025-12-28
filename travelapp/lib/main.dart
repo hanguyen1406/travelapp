@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:travelapp/viewModel/auth_view_model.dart';
 import 'package:travelapp/viewModel/trip_view_model.dart';
 import 'package:travelapp/viewModel/itinerary_view_model.dart';
+import 'package:travelapp/viewModel/checklist_view_model.dart';
 import 'view/auth/LoginScreen.dart';
 
 
@@ -15,11 +16,16 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Travel App',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      // home: LoginScreen(),
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthViewModel()),
         ChangeNotifierProvider(create: (_) => TripViewModel()),
         ChangeNotifierProvider(create: (_) => ItineraryViewModel()),
+        ChangeNotifierProvider(create: (_) => ChecklistViewModel()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

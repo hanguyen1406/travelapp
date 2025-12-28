@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:travelapp/models/trip_model.dart';
 import 'package:travelapp/viewModel/trip_view_model.dart';
 import 'package:travelapp/view/itinerary/ItineraryScreen.dart';
+import 'package:travelapp/view/checklist/ChecklistScreen.dart';
 import 'package:intl/intl.dart';
 
 class TripDashboard extends StatefulWidget {
@@ -282,9 +283,15 @@ class _TripDashboardState extends State<TripDashboard> {
           Colors.pink[100]!,
           Colors.pink,
           trip.checklistCount,
+
+          onTap: () {
+            // Navigate to Checklist Screen
+              context,
+              MaterialPageRoute(builder: (_) => ChecklistScreen(tripId: trip.id)),
+            );
+          },
+
         ),
-      ],
-    );
   }
 
   Widget _buildGridItem(String title, IconData icon, Color bgColor, Color iconColor, int count, {VoidCallback? onTap}) {
