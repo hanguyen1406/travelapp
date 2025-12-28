@@ -1,3 +1,5 @@
+import 'package:travelapp/models/user_model.dart';
+
 class Trip {
   final int id;
   final String tripName;
@@ -15,6 +17,7 @@ class Trip {
   final int checklistCount;
   final int memberCount;
   final double totalExpense;
+  final List<User> members;
 
   Trip({
     required this.id,
@@ -33,6 +36,7 @@ class Trip {
     this.checklistCount = 0,
     this.memberCount = 0,
     this.totalExpense = 0.0,
+    this.members = const [],
   });
 
   factory Trip.fromJson(Map<String, dynamic> json) {
@@ -53,6 +57,9 @@ class Trip {
       checklistCount: json['checklistCount'] ?? 0,
       memberCount: json['memberCount'] ?? 0,
       totalExpense: (json['totalExpense'] ?? 0).toDouble(),
+      members: json['members'] != null 
+          ? (json['members'] as List).map((i) => User.fromJson(i)).toList() 
+          : [],
     );
   }
 }

@@ -6,6 +6,7 @@ import 'package:travelapp/models/trip_model.dart';
 import 'package:travelapp/view/itinerary/SuggestActivity.dart';
 import 'package:travelapp/view/itinerary/VotingScreen.dart';
 import 'package:travelapp/view/itinerary/ConfirmedItinerary.dart'; // Ensure this exists or I create it
+import 'package:travelapp/viewModel/auth_view_model.dart';
 import 'package:intl/intl.dart';
 
 class ItineraryScreen extends StatefulWidget {
@@ -23,7 +24,8 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<ItineraryViewModel>(context, listen: false).fetchItineraries(widget.tripId);
+      final authVM = Provider.of<AuthViewModel>(context, listen: false);
+      Provider.of<ItineraryViewModel>(context, listen: false).fetchItineraries(widget.tripId, userId: authVM.userId);
     });
   }
 
@@ -42,12 +44,13 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.add, color: Colors.blue),
-            onPressed: () {
-               Navigator.push(
-                 context,
-                 MaterialPageRoute(builder: (_) => SuggestActivity(tripId: widget.tripId)),
-               ).then((_) => Provider.of<ItineraryViewModel>(context, listen: false).fetchItineraries(widget.tripId));
-            },
+             onPressed: () {
+                final authVM = Provider.of<AuthViewModel>(context, listen: false);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => SuggestActivity(tripId: widget.tripId)),
+                ).then((_) => Provider.of<ItineraryViewModel>(context, listen: false).fetchItineraries(widget.tripId, userId: authVM.userId));
+             },
           )
         ],
       ),
@@ -95,10 +98,11 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
                       padding: EdgeInsets.symmetric(vertical: 16)
                     ),
                     onPressed: () {
+                       final authVM = Provider.of<AuthViewModel>(context, listen: false);
                        Navigator.push(
                          context,
                          MaterialPageRoute(builder: (_) => VotingScreen(tripId: widget.tripId)),
-                       ).then((_) => vm.fetchItineraries(widget.tripId));
+                       ).then((_) => vm.fetchItineraries(widget.tripId, userId: authVM.userId));
                     },
                      // Make it look like the "Thêm hoạt động" button or "Voting" entry
                     child: const Text("Hoạt động đang bình chọn", style: TextStyle(fontWeight: FontWeight.bold)),

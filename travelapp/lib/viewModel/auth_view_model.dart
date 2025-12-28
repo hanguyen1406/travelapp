@@ -13,11 +13,13 @@ class AuthViewModel extends ChangeNotifier {
 
   bool _isLoading = false;
   String? _token;
+  int? _userId;
   String? _errorMessage;
   LoginResponse? _loginResponse;
 
   bool get isLoading => _isLoading;
   String? get token => _token;
+  int? get userId => _userId;
   String? get errorMessage => _errorMessage;
   LoginResponse? get loginResponse => _loginResponse;
 
@@ -28,13 +30,16 @@ class AuthViewModel extends ChangeNotifier {
   Future<void> _loadToken() async {
     final prefs = await SharedPreferences.getInstance();
     _token = prefs.getString('auth_token');
+    _userId = prefs.getInt('auth_user_id');
     notifyListeners();
   }
 
-  Future<void> _saveToken(String token) async {
+  Future<void> _saveToken(String token, int userId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('auth_token', token);
+    await prefs.setInt('auth_user_id', userId);
     _token = token;
+    _userId = userId;
     notifyListeners();
   }
 
@@ -55,8 +60,11 @@ class AuthViewModel extends ChangeNotifier {
       );
 
       _loginResponse = LoginResponse.fromJson(response);
-      if (_loginResponse?.token != null) {
-        await _saveToken(_loginResponse!.token!);
+      if (_loginResponse?.token != null && _loginResponse?.id != null) {
+        await _saveToken(_loginResponse!.token!, _loginResponse!.id!);
+      } else if (_loginResponse?.token != null) {
+         // Fallback if id is not directly in the root or user object not present in a specific way
+         // Based on LoginResponse model, id is at root.
       }
 
       _isLoading = false;
@@ -114,7 +122,9 @@ class AuthViewModel extends ChangeNotifier {
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('auth_token');
+    await prefs.remove('auth_user_id');
     _token = null;
+    _userId = null;
     _loginResponse = null;
     _errorMessage = null;
     notifyListeners();

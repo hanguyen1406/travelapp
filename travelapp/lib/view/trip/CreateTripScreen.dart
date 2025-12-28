@@ -1,8 +1,9 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:travelapp/utils/app_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:provider/provider.dart';
+import 'package:travelapp/viewModel/trip_view_model.dart';
+import 'package:travelapp/data/services/openmap_service.dart';
 
 class CreateTripScreen extends StatefulWidget {
   const CreateTripScreen({Key? key}) : super(key: key);
@@ -165,64 +166,44 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
       );
       return;
     }
-    setState(() {
-      isLoading = true;
-    });
+    
+    // Member parsing logic if needed? 
+    // Currently sending members as empty list in body, which is fine for now based on previous code.
+    
     final body = {
       'tripName': _nameController.text,
       'description': _destinationController.text,
       'startDate': _startDate!.toIso8601String(),
       'endDate': _endDate!.toIso8601String(),
       'coverImage': '',
-      'members': [],
+      'members': [], // Logic to add actual members can be added here
+      'memberCount': members.length,
+      'createdById': 1, // Mock or retrieve from Auth
     };
-    try {
-      // In Real MVVM, this would be in ViewModel, but moving AS IS for now as requested to structure folders.
-      // Refactoring into ViewModel can be a separate step or improved later if requested.
-      // Ideally TripViewModel.createTrip(...)
-      final response = await http.post(
-        Uri.parse('${AppConfig.baseUrl}/trips'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(body),
+    
+    // setState(() => isLoading = true); // Optional if using VM loading
+    
+    final vm = Provider.of<TripViewModel>(context, listen: false);
+    final success = await vm.createTrip(body);
+
+    if (success) {
+      if (!mounted) return;
+      Navigator.pop(context, true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tạo chuyến đi thành công!')),
       );
-      setState(() {
-        isLoading = false;
-      });
-      if (response.statusCode == 200) {
-        Navigator.pop(context, true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tạo chuyến đi thành công!')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Tạo thất bại: ${response.body}')),
-        );
-      }
-    } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Lỗi kết nối server!')));
+    } else {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Tạo thất bại: ${vm.error}')),
+      );
     }
   }
 
   Future<List<String>> fetchLocationSuggestions(String query) async {
-    final url = Uri.parse(
-      'https://api.openmap.vn/autocomplete?text=$query&location=21.03279,105.78788&radius=50',
-    );
-    final response = await http.get(url, headers: {"apikey": AppConfig.openMapApiKey});
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      if (data is List) {
-        return data
-            .map<String>((item) => item['name'] as String? ?? '')
-            .where((e) => e.isNotEmpty)
-            .toList();
-      }
-    }
-    return [];
+    // Return names for display in TypeAhead
+    final suggestions = await OpenMapService().getLocationSuggestions(query);
+    return suggestions.map((e) => e['name']!).toList();
   }
 
   @override
