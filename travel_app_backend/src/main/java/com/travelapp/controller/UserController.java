@@ -119,7 +119,7 @@ public class UserController {
 					user.getSurname().substring(0, 1).toUpperCase() + user.getSurname().substring(1).toLowerCase());
 			if (user.getPassword() == null || user.getPassword().trim() == "") {
 				user.setPassword(userExsist.getPassword());
-			}else {
+			} else {
 				user.setPassword(encoder.encode(user.getPassword()));
 			}
 			userService.save(user);
@@ -183,7 +183,7 @@ public class UserController {
 		if (user.isPresent()) {
 			User foundUser = user.get();
 			// Format join date
-			String joinDate = "Hãn gia từ tháng 1 năm 2024";
+			String joinDate = "Tham gia từ tháng 1 năm 2024";
 			if (foundUser.getDateOfBirth() != null) {
 				SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
 				joinDate = "Tham gia từ: " + sdf.format(foundUser.getDateOfBirth());
@@ -207,12 +207,26 @@ public class UserController {
 					totalCountries,
 					totalCities,
 					ongoingTrips,
-					completedTrips
-			);
+					completedTrips);
 
 			return new ResponseEntity<>(profileDTO, HttpStatus.OK);
 		}
 		return new ResponseEntity<>(new MessageResponse("Người dùng không tìm thấy!"), HttpStatus.NOT_FOUND);
+	}
+
+	@GetMapping("/search")
+	public ResponseEntity<java.util.List<UserDTO>> searchUsers(@RequestParam("query") String query) {
+		java.util.List<User> users = userService.searchUsers(query);
+		java.util.List<UserDTO> userDTOs = new java.util.ArrayList<>();
+		for (User user : users) {
+			Set<RoleDTO> roles = new HashSet<>();
+			for (Role role : user.getRoles()) {
+				roles.add(new RoleDTO(role.getId(), role.getName()));
+			}
+			userDTOs.add(new UserDTO(user.getId(), user.getName(), user.getSurname(), user.getUsername(),
+					user.getEmail(), user.getPassword(), roles));
+		}
+		return ResponseEntity.ok(userDTOs);
 	}
 
 }

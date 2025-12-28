@@ -20,10 +20,10 @@ class ItineraryViewModel extends ChangeNotifier {
   List<Itinerary> get confirmedItineraries => 
       _itineraries.where((i) => i.status == 'CONFIRMED').toList();
 
-  Future<void> fetchItineraries(int tripId) async {
+  Future<void> fetchItineraries(int tripId, {int? userId}) async {
     _setLoading(true);
     try {
-      _itineraries = await _repository.getItineraries(tripId);
+      _itineraries = await _repository.getItineraries(tripId, userId);
       _error = null;
     } catch (e) {
       _error = e.toString();

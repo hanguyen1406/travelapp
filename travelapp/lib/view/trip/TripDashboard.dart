@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:travelapp/models/trip_model.dart';
+import 'package:travelapp/models/user_model.dart';
 import 'package:travelapp/viewModel/trip_view_model.dart';
 import 'package:travelapp/view/itinerary/ItineraryScreen.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:intl/intl.dart';
 
 class TripDashboard extends StatefulWidget {
@@ -67,7 +69,7 @@ class _TripDashboardState extends State<TripDashboard> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildMemberSection(),
+                          _buildMemberSection(trip),
                           const SizedBox(height: 20),
                           _buildDashboardGrid(trip),
                           const SizedBox(height: 30),
@@ -184,7 +186,7 @@ class _TripDashboardState extends State<TripDashboard> {
     );
   }
 
-  Widget _buildMemberSection() {
+  Widget _buildMemberSection(Trip trip) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -202,27 +204,227 @@ class _TripDashboardState extends State<TripDashboard> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
-            children: const [
-              Icon(Icons.people_outline, color: Colors.grey),
-              SizedBox(width: 8),
-              Text("Các thành viên", style: TextStyle(fontWeight: FontWeight.w600)),
+            children: [
+              const Icon(Icons.people_outline, color: Colors.grey),
+              const SizedBox(width: 8),
+              Text("Các thành viên (${trip.memberCount})", style: const TextStyle(fontWeight: FontWeight.w600)),
             ],
           ),
           Row(
             children: [
-               _buildAvatar('Y', Colors.blue),
-               _buildAvatar('S', Colors.greenAccent),
-               _buildAvatar('M', Colors.orangeAccent),
-               _buildAvatar('L', Colors.pinkAccent),
-               CircleAvatar(
-                 radius: 14,
-                 backgroundColor: Colors.grey[200],
-                 child: const Icon(Icons.add, size: 16, color: Colors.black54),
+               ...trip.members.take(4).map((m) => _buildAvatar(m.name.isNotEmpty ? m.name[0].toUpperCase() : '?', Colors.blue)),
+               if (trip.memberCount > 4)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 4.0),
+                    child: CircleAvatar(
+                      radius: 14,
+                      backgroundColor: Colors.grey[300],
+                      child: Text('+${trip.memberCount - 4}', style: const TextStyle(fontSize: 10, color: Colors.black)),
+                    ),
+                  ),
+               GestureDetector(
+                 onTap: () => _showAddMemberSheet(trip.id),
+                 child: CircleAvatar(
+                   radius: 14,
+                   backgroundColor: Colors.grey[200],
+                   child: const Icon(Icons.add, size: 16, color: Colors.black54),
+                 ),
                ),
             ],
           )
         ],
       ),
+    );
+  }
+
+  void _showAddMemberSheet(int tripId) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        String inputValue = '';
+        bool isEmailTab = true;
+        
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                top: 20, 
+                left: 20, 
+                right: 20
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Thêm Thành Viên',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Tabs
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setModalState(() => isEmailTab = true),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: isEmailTab ? Colors.blue : const Color(0xFFF2F4F7),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            alignment: Alignment.center,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.email_outlined, 
+                                  size: 18, 
+                                  color: isEmailTab ? Colors.white : Colors.black54
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Email',
+                                  style: TextStyle(
+                                    color: isEmailTab ? Colors.white : Colors.black54,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setModalState(() => isEmailTab = false),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: !isEmailTab ? Colors.blue : const Color(0xFFF2F4F7),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            alignment: Alignment.center,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.tag, 
+                                  size: 18, 
+                                  color: !isEmailTab ? Colors.white : Colors.black54
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'User ID',
+                                  style: TextStyle(
+                                    color: !isEmailTab ? Colors.white : Colors.black54,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  TypeAheadField<User>(
+                    debounceDuration: const Duration(milliseconds: 500),
+                    textFieldConfiguration: TextFieldConfiguration(
+                      decoration: InputDecoration(
+                        hintText: isEmailTab 
+                            ? 'Tìm theo email...' 
+                            : 'Nhập ID người dùng...',
+                        prefixIcon: Icon(
+                          isEmailTab ? Icons.email_outlined : Icons.search,
+                          color: Colors.grey,
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                      ),
+                    ),
+                    suggestionsCallback: (pattern) async {
+                      if (pattern.isEmpty) return [];
+                      final vm = Provider.of<TripViewModel>(context, listen: false);
+                      return await vm.searchUsers(pattern);
+                    },
+                    itemBuilder: (context, User suggestion) {
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: Colors.blueAccent,
+                          child: Text(suggestion.username.isNotEmpty ? suggestion.username[0].toUpperCase() : 'U', style: TextStyle(color: Colors.white)),
+                        ),
+                        title: Text(suggestion.username),
+                        subtitle: Text(suggestion.email),
+                      );
+                    },
+                    onSuggestionSelected: (User suggestion) async {
+                       Navigator.pop(context); // Close sheet
+                       final vm = Provider.of<TripViewModel>(context, listen: false);
+                       // Add by User ID regardless of tab, as we have the specific user object
+                       final success = await vm.addMember(tripId, {'userId': suggestion.id.toString()});
+                       
+                        if (mounted) {
+                          if (success) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Đã thêm thành viên thành công!')),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Thất bại: ${vm.error}')),
+                            );
+                          }
+                        }
+                    },
+                    noItemsFoundBuilder: (context) => const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Text('Không tìm thấy người dùng'),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  const Center(
+                    child: Text(
+                      'Nhập để tìm kiếm và chọn người dùng',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                  const SizedBox(height: 250),
+                ],
+              ),
+            );
+          }
+        );
+      },
     );
   }
 

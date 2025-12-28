@@ -19,7 +19,10 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     // Fetch trips when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<TripViewModel>(context, listen: false).fetchTrips();
+      final authVM = Provider.of<AuthViewModel>(context, listen: false);
+      if (authVM.userId != null) {
+        Provider.of<TripViewModel>(context, listen: false).fetchTrips(authVM.userId!);
+      }
     });
   }
 
