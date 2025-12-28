@@ -6,11 +6,11 @@ class User {
   final String email;
 
   User({
-    required this.id, 
-    required this.username, 
-    required this.name, 
-    required this.surname, 
-    required this.email
+    required this.id,
+    required this.username,
+    required this.name,
+    required this.surname,
+    required this.email,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -22,6 +22,4 @@ class User {
       email: json['email'] ?? '',
     );
   }
-
-  String get fullName => '$name $surname'.trim();
 }
