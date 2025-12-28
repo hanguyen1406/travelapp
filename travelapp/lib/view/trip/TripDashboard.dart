@@ -283,16 +283,15 @@ class _TripDashboardState extends State<TripDashboard> {
           Colors.pink[100]!,
           Colors.pink,
           trip.checklistCount,
+
           onTap: () {
             // Navigate to Checklist Screen
-            Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => ChecklistScreen(tripId: trip.id)),
             );
           },
+
         ),
-      ],
-    );
   }
 
   Widget _buildGridItem(String title, IconData icon, Color bgColor, Color iconColor, int count, {VoidCallback? onTap}) {
