@@ -373,36 +373,35 @@ class _TripDashboardState extends State<TripDashboard> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 24),
 
                   TypeAheadField<User>(
                     debounceDuration: const Duration(milliseconds: 500),
-                    builder: (context, controller, focusNode) {
-                      return TextField(
-                        controller: controller,
-                        focusNode: focusNode,
-                        decoration: InputDecoration(
-                          hintText: isEmailTab
-                              ? 'Tìm theo email...'
-                              : 'Nhập ID người dùng...',
-                          prefixIcon: Icon(
-                            isEmailTab ? Icons.email_outlined : Icons.search,
-                            color: Colors.grey,
-                          ),
-                          filled: true,
-                          fillColor: Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
+                    textFieldConfiguration: TextFieldConfiguration(
+                      decoration: InputDecoration(
+                        hintText: isEmailTab
+                            ? 'Tìm theo email...'
+                            : 'Nhập ID người dùng...',
+                        prefixIcon: Icon(
+                          isEmailTab ? Icons.email_outlined : Icons.search,
+                          color: Colors.grey,
                         ),
-                      );
-                    },
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.blue),
+                        ),
+                      ),
+                    ),
                     suggestionsCallback: (pattern) async {
                       if (pattern.isEmpty) return [];
                       final vm = Provider.of<TripViewModel>(
@@ -426,7 +425,7 @@ class _TripDashboardState extends State<TripDashboard> {
                         subtitle: Text(suggestion.email),
                       );
                     },
-                    onSelected: (User suggestion) async {
+                    onSuggestionSelected: (User suggestion) async {
                       Navigator.pop(context); // Close sheet
                       final vm = Provider.of<TripViewModel>(
                         context,
@@ -451,7 +450,7 @@ class _TripDashboardState extends State<TripDashboard> {
                         }
                       }
                     },
-                    emptyBuilder: (context) => const Padding(
+                    noItemsFoundBuilder: (context) => const Padding(
                       padding: EdgeInsets.all(8.0),
                       child: Text('Không tìm thấy người dùng'),
                     ),

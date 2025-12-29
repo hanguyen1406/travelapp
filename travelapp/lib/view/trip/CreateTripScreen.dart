@@ -228,10 +228,8 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
     }
   }
 
-  Future<List<String>> fetchLocationSuggestions(String query) async {
-    // Return names for display in TypeAhead
-    final suggestions = await OpenMapService().getLocationSuggestions(query);
-    return suggestions.map((e) => e['name']!).toList();
+  Future<List<Map<String, String>>> fetchLocationSuggestions(String query) async {
+    return await OpenMapService().getLocationSuggestions(query);
   }
 
   @override
@@ -275,35 +273,34 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              TypeAheadField<String>(
-                builder: (context, controller, focusNode) {
-                  return TextField(
-                    controller: controller,
-                    focusNode: focusNode,
-                    style: const TextStyle(fontSize: 13),
-                    decoration: InputDecoration(
-                      labelText: 'Điểm đến',
-                      labelStyle: const TextStyle(fontSize: 13),
-                      hintText: 'VD: Đà Lạt, Lâm Đồng',
-                      hintStyle: const TextStyle(fontSize: 13),
-                      prefixIcon: const Icon(Icons.location_on_outlined),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
+              TypeAheadField<Map<String, String>>(
+                textFieldConfiguration: TextFieldConfiguration(
+                  controller: _destinationController,
+                  style: const TextStyle(fontSize: 13),
+                  decoration: InputDecoration(
+                    labelText: 'Điểm đến',
+                    labelStyle: const TextStyle(fontSize: 13),
+                    hintText: 'VD: Đà Lạt, Lâm Đồng',
+                    hintStyle: const TextStyle(fontSize: 13),
+                    prefixIcon: const Icon(Icons.location_on_outlined),
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
                     ),
-                  );
-                },
+                  ),
+                ),
                 suggestionsCallback: fetchLocationSuggestions,
                 itemBuilder: (context, suggestion) {
                   return ListTile(
-                    title: Text(suggestion, style: const TextStyle(fontSize: 13)),
+                    leading: const Icon(Icons.location_on),
+                    title: Text(suggestion['name']!, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                    subtitle: Text(suggestion['address']!, style: const TextStyle(fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
                   );
                 },
-                onSelected: (suggestion) {
-                  _destinationController.text = suggestion;
+                onSuggestionSelected: (suggestion) {
+                  _destinationController.text = suggestion['name']!;
                 },
               ),
               const SizedBox(height: 16),

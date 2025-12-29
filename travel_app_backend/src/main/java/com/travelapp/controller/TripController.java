@@ -28,6 +28,11 @@ public class TripController {
         return ResponseEntity.ok(tripService.getTripById(id));
     }
 
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<?> getTripsByUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(tripService.getTripsByUserId(userId));
+    }
+
     @PostMapping("/{id}/members")
     public ResponseEntity<?> addMemberToTrip(@PathVariable Long id, @RequestBody java.util.Map<String, String> body) {
         String email = body.get("email");

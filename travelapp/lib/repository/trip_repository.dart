@@ -21,7 +21,7 @@ class TripRepository {
         throw Exception('No authentication token found');
       }
       
-      final url = '$_tripsUrl?userId=$userId';
+      final url = '$_tripsUrl/user/$userId';
       dynamic response = await _apiServices.getGetApiResponseWithToken(url, token);
       // response is already decoded json (List<dynamic>)
       List<dynamic> data = response;
