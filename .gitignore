@@ -19,7 +19,7 @@ travelapp/*.lock
 travelapp/.metadata
 travelapp/doc/api/
 travelapp/.fvm/
-
+backend_workspace
 # Android
 travelapp/android/.gradle/
 travelapp/android/app/debug/

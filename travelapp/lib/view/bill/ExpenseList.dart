@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:travelapp/viewModel/trip_view_model.dart';
+import 'package:travelapp/models/expense_model.dart';
+import 'package:travelapp/repository/expense_repository.dart';
 import 'package:travelapp/view/bill/AddExpense.dart';
 import 'package:travelapp/view/bill/BalanceSu.dart';
 
@@ -15,8 +15,8 @@ class ExpenseListScreen extends StatefulWidget {
 }
 
 class _ExpenseListScreenState extends State<ExpenseListScreen> {
-  late List<ExpenseItem> expenses = [];
-  late List<ExpenseItem> filteredExpenses = [];
+  List<Expense> expenses = [];
+  List<Expense> filteredExpenses = [];
   String selectedCategory = 'Tất cả';
   double totalExpense = 0.0;
   double userExpense = 0.0;
@@ -28,7 +28,9 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
     'Nhà nghỉ',
     'Đồ ăn',
     'Hoạt động',
-    'Dị lệ',
+    'Di chuyển',
+    'Shopping',
+    'Khác',
   ];
 
   @override
@@ -38,55 +40,39 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
   }
 
   Future<void> _loadExpenses() async {
+    if (!mounted) return;
     setState(() => isLoading = true);
     try {
-      // TODO: Fetch expenses from API using TripViewModel
-      // For now, using mock data
-      await Future.delayed(const Duration(milliseconds: 500));
-      _initializeMockData();
-      _filterExpenses();
+      print('💰 [ExpenseList] Loading expenses for trip ${widget.tripId}...');
+      final loadedExpenses = await ExpenseRepository.getExpenses(widget.tripId);
+      
+      if (mounted) {
+        setState(() {
+          expenses = loadedExpenses;
+          _calculateSummary();
+          _filterExpenses();
+          isLoading = false;
+        });
+      }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Lỗi: ${e.toString()}')));
-    } finally {
-      setState(() => isLoading = false);
+      print('❌ [ExpenseList] Error: $e');
+      if (mounted) {
+        setState(() {
+          expenses = [];
+          filteredExpenses = [];
+          isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi tải chi phí: $e')),
+        );
+      }
     }
   }
 
-  void _initializeMockData() {
-    expenses = [
-      ExpenseItem(
-        id: 1,
-        title: 'Đặt khu du lịch biến',
-        category: 'Nhà nghỉ',
-        amount: 1200000,
-        description: 'Hotel booking',
-        date: DateTime(2024, 12, 10),
-        paymentStatus: 'Bạn thanh toán',
-        paidBy: 'Bạn',
-        splitWith: 4,
-        icon: Icons.hotel,
-      ),
-      ExpenseItem(
-        id: 2,
-        title: 'Ăn tối tại bãi biển',
-        category: 'Đồ ăn',
-        amount: 450000,
-        description: 'Dinner at beach',
-        date: DateTime(2024, 12, 15),
-        paymentStatus: 'Hiểu thanh toán',
-        paidBy: 'Bạn',
-        splitWith: 4,
-        icon: Icons.restaurant,
-      ),
-    ];
-
+  void _calculateSummary() {
     totalExpense = expenses.fold(0, (sum, item) => sum + item.amount);
-    userExpense = expenses.fold(
-      0,
-      (sum, item) => sum + (item.paidBy == 'Bạn' ? item.amount : 0),
-    );
+    // TODO: Filter user specific expense correctly using logged in user ID
+    userExpense = totalExpense; 
     expenseCount = expenses.length;
   }
 
@@ -98,7 +84,6 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
           .where((e) => e.category == selectedCategory)
           .toList();
     }
-    setState(() {});
   }
 
   void _onCategoryChanged(String category) {
@@ -106,16 +91,17 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
     _filterExpenses();
   }
 
-  void _addExpense() {
-    Navigator.push(
+  Future<void> _addExpense() async {
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => AddExpenseScreen(tripId: widget.tripId),
       ),
-    ).then((_) {
-      // Reload expenses when returning from add screen
+    );
+
+    if (result == true) {
       _loadExpenses();
-    });
+    }
   }
 
   @override
@@ -125,6 +111,10 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: const Text(
           'Chi phí',
           style: TextStyle(
@@ -133,7 +123,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        centerTitle: false,
+        centerTitle: true,
         actions: [
           Container(
             margin: const EdgeInsets.all(8),
@@ -157,8 +147,11 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: Column(
+          : RefreshIndicator(
+              onRefresh: _loadExpenses,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.only(bottom: 80), // Space for FAB
                 children: [
                   // Summary Card
                   _buildSummaryCard(),
@@ -167,7 +160,10 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                   _buildCategoryTabs(),
 
                   // Expense List
-                  _buildExpenseList(),
+                  if (filteredExpenses.isEmpty)
+                    _buildEmptyState()
+                  else
+                    ...filteredExpenses.map((expense) => _buildExpenseCard(expense)),
                 ],
               ),
             ),
@@ -176,6 +172,27 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
         backgroundColor: const Color(0xFF0066FF),
         icon: const Icon(Icons.add),
         label: const Text('Thêm chi phí'),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.receipt_long, size: 64, color: Colors.grey[300]),
+          const SizedBox(height: 16),
+          Text(
+            'Chưa có chi phí',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -252,12 +269,12 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Bạn đã chi',
+                    'Tổng số GD',
                     style: TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${_formatCurrency(userExpense)}đ',
+                    '${expenseCount}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -275,7 +292,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '$expenseCount thành phần',
+                    '$expenseCount mục',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -314,7 +331,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                   Icon(Icons.visibility, color: Color(0xFF0066FF), size: 20),
                   SizedBox(width: 8),
                   Text(
-                    'View Balances',
+                    'Xem số dư',
                     style: TextStyle(
                       color: Color(0xFF0066FF),
                       fontWeight: FontWeight.w600,
@@ -343,24 +360,24 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: FilterChip(
-                onSelected: (value) => _onCategoryChanged(category),
-                label: Text(
-                  category,
-                  style: TextStyle(
-                    color: isSelected ? Colors.white : Colors.grey[700],
-                    fontWeight: FontWeight.w500,
-                    fontSize: 13,
-                  ),
-                ),
-                backgroundColor: isSelected
-                    ? const Color(0xFF0066FF)
-                    : Colors.grey[200],
-                side: BorderSide.none,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+              onSelected: (value) => _onCategoryChanged(category),
+              label: Text(
+                category,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : Colors.grey[700],
+                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
                 ),
               ),
+              backgroundColor: isSelected
+                  ? const Color(0xFF0066FF)
+                  : Colors.grey[200],
+              side: BorderSide.none,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 8,
+              ),
+            ),
             );
           }).toList(),
         ),
@@ -368,41 +385,9 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
     );
   }
 
-  Widget _buildExpenseList() {
-    if (filteredExpenses.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.receipt_long, size: 64, color: Colors.grey[300]),
-            const SizedBox(height: 16),
-            Text(
-              'Chưa có chi phí',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
+  Widget _buildExpenseCard(Expense expense) {
     return Container(
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        children: filteredExpenses.map((expense) {
-          return _buildExpenseCard(expense);
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildExpenseCard(ExpenseItem expense) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -423,7 +408,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
-            expense.icon,
+            _getCategoryIcon(expense.category),
             color: _getCategoryColor(expense.category),
             size: 24,
           ),
@@ -437,12 +422,12 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
           children: [
             const SizedBox(height: 4),
             Text(
-              expense.paymentStatus,
+              expense.paidBy, // paidByName
               style: TextStyle(color: Colors.grey[600], fontSize: 12),
             ),
             const SizedBox(height: 2),
             Text(
-              '${expense.category} • Split với ${expense.splitWith} người',
+              '${expense.category}',
               style: TextStyle(color: Colors.grey[500], fontSize: 12),
             ),
           ],
@@ -473,27 +458,51 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
 
   Color _getCategoryColor(String category) {
     switch (category) {
-      case 'Nhà nghỉ':
-        return const Color(0xFFFF9800);
-      case 'Đồ ăn':
-        return const Color(0xFFE91E63);
-      case 'Hoạt động':
-        return const Color(0xFF2196F3);
-      case 'Dị lệ':
-        return const Color(0xFF9C27B0);
-      default:
-        return const Color(0xFF0066FF);
+      case 'Nhà nghỉ': return const Color(0xFFFF9800);
+      case 'Đồ ăn': return const Color(0xFFE91E63);
+      case 'Hoạt động': return const Color(0xFF2196F3);
+      case 'Di chuyển': return const Color(0xFF9C27B0);
+      case 'Shopping': return const Color(0xFFFFC107);
+      default: return const Color(0xFF0066FF);
     }
   }
 
-  void _showExpenseDetail(ExpenseItem expense) {
+  IconData _getCategoryIcon(String category) {
+    switch (category) {
+      case 'Nhà nghỉ': return Icons.hotel;
+      case 'Đồ ăn': return Icons.restaurant;
+      case 'Hoạt động': return Icons.directions_run;
+      case 'Di chuyển': return Icons.directions_car;
+      case 'Shopping': return Icons.shopping_bag;
+      default: return Icons.category;
+    }
+  }
+
+  void _showExpenseDetail(Expense expense) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => ExpenseDetailSheet(expense: expense),
+      builder: (context) => ExpenseDetailSheet(expense: expense, onDelete: () {
+          _deleteExpense(expense.id);
+      }),
     );
+  }
+
+  void _deleteExpense(int expenseId) async {
+      try {
+          await ExpenseRepository.deleteExpense(expenseId);
+          Navigator.pop(context); // Close bottom sheet
+          _loadExpenses(); // Refresh list
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Đã xóa chi phí')),
+          );
+      } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Lỗi khi xóa: $e')),
+          );
+      }
   }
 
   String _formatCurrency(double amount) {
@@ -506,67 +515,11 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
   }
 }
 
-class ExpenseItem {
-  final int id;
-  final String title;
-  final String category;
-  final double amount;
-  final String description;
-  final DateTime date;
-  final String paymentStatus;
-  final String paidBy;
-  final int splitWith;
-  final IconData icon;
-
-  ExpenseItem({
-    required this.id,
-    required this.title,
-    required this.category,
-    required this.amount,
-    required this.description,
-    required this.date,
-    required this.paymentStatus,
-    required this.paidBy,
-    required this.splitWith,
-    required this.icon,
-  });
-
-  factory ExpenseItem.fromJson(Map<String, dynamic> json) {
-    return ExpenseItem(
-      id: json['id'] ?? 0,
-      title: json['title'] ?? '',
-      category: json['category'] ?? '',
-      amount: (json['amount'] ?? 0).toDouble(),
-      description: json['description'] ?? '',
-      date: json['date'] != null
-          ? DateTime.parse(json['date'])
-          : DateTime.now(),
-      paymentStatus: json['paymentStatus'] ?? '',
-      paidBy: json['paidBy'] ?? '',
-      splitWith: json['splitWith'] ?? 1,
-      icon: Icons.receipt,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'title': title,
-      'category': category,
-      'amount': amount,
-      'description': description,
-      'date': date.toIso8601String(),
-      'paymentStatus': paymentStatus,
-      'paidBy': paidBy,
-      'splitWith': splitWith,
-    };
-  }
-}
-
 class ExpenseDetailSheet extends StatelessWidget {
-  final ExpenseItem expense;
+  final Expense expense;
+  final VoidCallback onDelete;
 
-  const ExpenseDetailSheet({Key? key, required this.expense}) : super(key: key);
+  const ExpenseDetailSheet({Key? key, required this.expense, required this.onDelete}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -587,9 +540,43 @@ class ExpenseDetailSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          Text(
-            expense.title,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                    child: Text(
+                        expense.title,
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                ),
+                IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () {
+                        // Confirm dialog
+                        showDialog(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                                title: const Text('Xóa chi phí?'),
+                                content: const Text('Bạn có chắc chắn muốn xóa chi phí này?'),
+                                actions: [
+                                    TextButton(
+                                        onPressed: () => Navigator.pop(ctx),
+                                        child: const Text('Hủy'),
+                                    ),
+                                    TextButton(
+                                        onPressed: () {
+                                            Navigator.pop(ctx);
+                                            onDelete();
+                                        },
+                                        style: TextButton.styleFrom(foregroundColor: Colors.red),
+                                        child: const Text('Xóa'),
+                                    ),
+                                ],
+                            ),
+                        );
+                    },
+                ),
+              ],
           ),
           const SizedBox(height: 16),
           _buildDetailRow('Danh mục', expense.category),
@@ -599,36 +586,22 @@ class ExpenseDetailSheet extends StatelessWidget {
             DateFormat('dd/MM/yyyy').format(expense.date),
           ),
           _buildDetailRow('Chi trả bởi', expense.paidBy),
-          _buildDetailRow('Chia sẻ với', '${expense.splitWith} người'),
-          _buildDetailRow('Trạng thái', expense.paymentStatus),
+          _buildDetailRow('Chia cách', expense.splitMethod),
+          
+          if (expense.description.isNotEmpty)
+             _buildDetailRow('Mô tả', expense.description),
+
           const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  child: const Text('Đóng'),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+                onPressed: () => Navigator.pop(context),
+                style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    // TODO: Edit expense
-                    Navigator.pop(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0066FF),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  child: const Text('Chỉnh sửa'),
-                ),
-              ),
-            ],
-          ),
+                child: const Text('Đóng'),
+            ),
+           ),
         ],
       ),
     );
