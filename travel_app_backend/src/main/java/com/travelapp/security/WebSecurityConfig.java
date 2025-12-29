@@ -55,14 +55,15 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
 		http.cors().and().csrf().disable()
-			.exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and()
-			.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
-			.authorizeRequests()
+				.exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and()
+				.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
+				.authorizeRequests()
+				.antMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
 				.antMatchers("/api/auth/**").permitAll()
 				.antMatchers("/api/trips/**").permitAll()
 				.antMatchers("/api/users/countUser", "/api/course").permitAll()
 				.anyRequest().authenticated();
-		
+
 		http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 	}
 }
