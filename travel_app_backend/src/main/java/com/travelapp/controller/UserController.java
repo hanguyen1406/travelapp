@@ -26,12 +26,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.travelapp.dto.RoleDTO;
 import com.travelapp.dto.UserDTO;
+import com.travelapp.dto.UserProfileDTO;
 import com.travelapp.model.ERole;
 import com.travelapp.model.MessageResponse;
 import com.travelapp.model.Role;
 import com.travelapp.model.User;
 import com.travelapp.service.RoleService;
 import com.travelapp.service.UserService;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
@@ -91,6 +94,22 @@ public class UserController {
 		return new ResponseEntity<UserDTO>(HttpStatus.NOT_FOUND);
 	}
 
+	@GetMapping("/id/{id}")
+	public ResponseEntity<?> getUserById(@PathVariable("id") Long id) {
+		Optional<User> user = userService.findOne(id);
+		if (user.isPresent()) {
+			User u = user.get();
+			Set<RoleDTO> roles = new HashSet<>();
+			for (Role role : u.getRoles()) {
+				roles.add(new RoleDTO(role.getId(), role.getName()));
+			}
+			UserDTO dto = new UserDTO(u.getId(), u.getName(), u.getSurname(), u.getUsername(),
+					u.getEmail(), u.getPassword(), roles);
+			return new ResponseEntity<>(dto, HttpStatus.OK);
+		}
+		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+	}
+
 	@PostMapping
 	@PreAuthorize("hasRole('ADMINISTRATOR')")
 	public ResponseEntity<User> create(@RequestBody User user) {
@@ -116,7 +135,7 @@ public class UserController {
 					user.getSurname().substring(0, 1).toUpperCase() + user.getSurname().substring(1).toLowerCase());
 			if (user.getPassword() == null || user.getPassword().trim() == "") {
 				user.setPassword(userExsist.getPassword());
-			}else {
+			} else {
 				user.setPassword(encoder.encode(user.getPassword()));
 			}
 			userService.save(user);
@@ -172,6 +191,58 @@ public class UserController {
 	public int countUser(@RequestParam(name = "name") String name, @RequestParam(name = "surname") String surname,
 			@RequestParam(name = "roleId") String roleId) {
 		return userService.countUser(name, surname, roleId);
+	}
+
+	@GetMapping("/profile/{username}")
+	public ResponseEntity<?> getUserProfile(@PathVariable("username") String username) {
+		Optional<User> user = userService.findByUsername(username);
+		if (user.isPresent()) {
+			User foundUser = user.get();
+			// Format join date
+			String joinDate = "Tham gia từ tháng 1 năm 2024";
+			if (foundUser.getDateOfBirth() != null) {
+				SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+				joinDate = "Tham gia từ: " + sdf.format(foundUser.getDateOfBirth());
+			}
+
+			// Get statistics from trips (assuming trips have userId and status)
+			int totalTrips = userService.getTotalTripsByUser(foundUser.getId());
+			int completedTrips = userService.getCompletedTripsByUser(foundUser.getId());
+			int ongoingTrips = totalTrips - completedTrips;
+			int totalCountries = userService.getTotalCountriesByUser(foundUser.getId());
+			int totalCities = userService.getTotalCitiesByUser(foundUser.getId());
+
+			UserProfileDTO profileDTO = new UserProfileDTO(
+					foundUser.getId(),
+					foundUser.getName(),
+					foundUser.getEmail(),
+					foundUser.getUsername(),
+					foundUser.getPhone(),
+					joinDate,
+					totalTrips,
+					totalCountries,
+					totalCities,
+					ongoingTrips,
+					completedTrips);
+
+			return new ResponseEntity<>(profileDTO, HttpStatus.OK);
+		}
+		return new ResponseEntity<>(new MessageResponse("Người dùng không tìm thấy!"), HttpStatus.NOT_FOUND);
+	}
+
+	@GetMapping("/search")
+	public ResponseEntity<java.util.List<UserDTO>> searchUsers(@RequestParam("query") String query) {
+		java.util.List<User> users = userService.searchUsers(query);
+		java.util.List<UserDTO> userDTOs = new java.util.ArrayList<>();
+		for (User user : users) {
+			Set<RoleDTO> roles = new HashSet<>();
+			for (Role role : user.getRoles()) {
+				roles.add(new RoleDTO(role.getId(), role.getName()));
+			}
+			userDTOs.add(new UserDTO(user.getId(), user.getName(), user.getSurname(), user.getUsername(),
+					user.getEmail(), user.getPassword(), roles));
+		}
+		return ResponseEntity.ok(userDTOs);
 	}
 
 }
