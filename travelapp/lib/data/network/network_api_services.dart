@@ -9,11 +9,13 @@ class NetworkApiServices extends BaseApiServices {
   Future getGetApiResponse(String url) async {
     dynamic responseJson;
     try {
-      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(Uri.parse(url))
+          .timeout(const Duration(seconds: 10));
       responseJson = returnResponse(response);
     } on SocketException {
       throw FetchDataException('No Internet Connection');
-    } catch(e) {
+    } catch (e) {
       throw FetchDataException(e.toString());
     }
     return responseJson;
@@ -23,17 +25,19 @@ class NetworkApiServices extends BaseApiServices {
   Future getGetApiResponseWithToken(String url, String token) async {
     dynamic responseJson;
     try {
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(
+            Uri.parse(url),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+          )
+          .timeout(const Duration(seconds: 10));
       responseJson = returnResponse(response);
     } on SocketException {
       throw FetchDataException('No Internet Connection');
-    } catch(e) {
+    } catch (e) {
       throw FetchDataException(e.toString());
     }
     return responseJson;
@@ -43,37 +47,130 @@ class NetworkApiServices extends BaseApiServices {
   Future getPostApiResponse(String url, dynamic data) async {
     dynamic responseJson;
     try {
-      final response = await http.post(
-        Uri.parse(url),
-        body: jsonEncode(data),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .post(
+            Uri.parse(url),
+            body: jsonEncode(data),
+            headers: {'Content-Type': 'application/json'},
+          )
+          .timeout(const Duration(seconds: 10));
       responseJson = returnResponse(response);
     } on SocketException {
       throw FetchDataException('No Internet Connection');
-    } catch(e) {
-       throw FetchDataException(e.toString());
+    } catch (e) {
+      throw FetchDataException(e.toString());
     }
     return responseJson;
   }
 
   @override
-  Future getPostApiResponseWithToken(String url, dynamic data, String token) async {
+  Future getPostApiResponseWithToken(
+    String url,
+    dynamic data,
+    String token,
+  ) async {
     dynamic responseJson;
     try {
-      final response = await http.post(
-        Uri.parse(url),
-        body: jsonEncode(data),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .post(
+            Uri.parse(url),
+            body: jsonEncode(data),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+          )
+          .timeout(const Duration(seconds: 10));
       responseJson = returnResponse(response);
     } on SocketException {
       throw FetchDataException('No Internet Connection');
-    } catch(e) {
-       throw FetchDataException(e.toString());
+    } catch (e) {
+      throw FetchDataException(e.toString());
+    }
+    return responseJson;
+  }
+
+  @override
+  Future getPutApiResponse(String url, dynamic data) async {
+    dynamic responseJson;
+    try {
+      final response = await http
+          .put(
+            Uri.parse(url),
+            body: jsonEncode(data),
+            headers: {'Content-Type': 'application/json'},
+          )
+          .timeout(const Duration(seconds: 10));
+      responseJson = returnResponse(response);
+    } on SocketException {
+      throw FetchDataException('No Internet Connection');
+    } catch (e) {
+      throw FetchDataException(e.toString());
+    }
+    return responseJson;
+  }
+
+  @override
+  Future getPutApiResponseWithToken(
+    String url,
+    dynamic data,
+    String token,
+  ) async {
+    dynamic responseJson;
+    try {
+      final response = await http
+          .put(
+            Uri.parse(url),
+            body: jsonEncode(data),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+          )
+          .timeout(const Duration(seconds: 10));
+      responseJson = returnResponse(response);
+    } on SocketException {
+      throw FetchDataException('No Internet Connection');
+    } catch (e) {
+      throw FetchDataException(e.toString());
+    }
+    return responseJson;
+  }
+
+  @override
+  Future getDeleteApiResponse(String url) async {
+    dynamic responseJson;
+    try {
+      final response = await http
+          .delete(Uri.parse(url))
+          .timeout(const Duration(seconds: 10));
+      responseJson = returnResponse(response);
+    } on SocketException {
+      throw FetchDataException('No Internet Connection');
+    } catch (e) {
+      throw FetchDataException(e.toString());
+    }
+    return responseJson;
+  }
+
+  @override
+  Future getDeleteApiResponseWithToken(String url, String token) async {
+    dynamic responseJson;
+    try {
+      final response = await http
+          .delete(
+            Uri.parse(url),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+          )
+          .timeout(const Duration(seconds: 10));
+      responseJson = returnResponse(response);
+    } on SocketException {
+      throw FetchDataException('No Internet Connection');
+    } catch (e) {
+      throw FetchDataException(e.toString());
     }
     return responseJson;
   }
@@ -90,8 +187,8 @@ class NetworkApiServices extends BaseApiServices {
       case 500:
       default:
         throw FetchDataException(
-            'Error occurred while communicating with server with status code : ${response.statusCode}');
+          'Error occurred while communicating with server with status code : ${response.statusCode}',
+        );
     }
   }
 }
-
