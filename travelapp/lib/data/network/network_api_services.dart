@@ -10,7 +10,10 @@ class NetworkApiServices extends BaseApiServices {
     dynamic responseJson;
     try {
       final response = await http
-          .get(Uri.parse(url))
+          .get(
+            Uri.parse(url),
+            headers: {'ngrok-skip-browser-warning': 'true'},
+          )
           .timeout(const Duration(seconds: 10));
       responseJson = returnResponse(response);
     } on SocketException {
@@ -31,6 +34,7 @@ class NetworkApiServices extends BaseApiServices {
             headers: {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $token',
+              'ngrok-skip-browser-warning': 'true',
             },
           )
           .timeout(const Duration(seconds: 10));
@@ -51,7 +55,10 @@ class NetworkApiServices extends BaseApiServices {
           .post(
             Uri.parse(url),
             body: jsonEncode(data),
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+              'Content-Type': 'application/json',
+              'ngrok-skip-browser-warning': 'true',
+            },
           )
           .timeout(const Duration(seconds: 10));
       responseJson = returnResponse(response);
@@ -78,6 +85,7 @@ class NetworkApiServices extends BaseApiServices {
             headers: {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $token',
+              'ngrok-skip-browser-warning': 'true',
             },
           )
           .timeout(const Duration(seconds: 10));
@@ -98,7 +106,10 @@ class NetworkApiServices extends BaseApiServices {
           .put(
             Uri.parse(url),
             body: jsonEncode(data),
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+              'Content-Type': 'application/json',
+              'ngrok-skip-browser-warning': 'true',
+            },
           )
           .timeout(const Duration(seconds: 10));
       responseJson = returnResponse(response);
@@ -125,6 +136,7 @@ class NetworkApiServices extends BaseApiServices {
             headers: {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $token',
+              'ngrok-skip-browser-warning': 'true',
             },
           )
           .timeout(const Duration(seconds: 10));
@@ -142,7 +154,10 @@ class NetworkApiServices extends BaseApiServices {
     dynamic responseJson;
     try {
       final response = await http
-          .delete(Uri.parse(url))
+          .delete(
+            Uri.parse(url),
+            headers: {'ngrok-skip-browser-warning': 'true'},
+          )
           .timeout(const Duration(seconds: 10));
       responseJson = returnResponse(response);
     } on SocketException {
@@ -163,6 +178,7 @@ class NetworkApiServices extends BaseApiServices {
             headers: {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $token',
+              'ngrok-skip-browser-warning': 'true',
             },
           )
           .timeout(const Duration(seconds: 10));

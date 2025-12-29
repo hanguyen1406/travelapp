@@ -11,7 +11,7 @@ class AppConfig {
       return 'http://localhost:8080/api';
     } else {
       // Mobile/emulator - use 10.0.2.2 for Android emulator
-      return 'http://10.0.2.2:8080/api';
+      return 'https://uncalmative-inexpugnably-lorette.ngrok-free.dev/api';
     }
   }
 
