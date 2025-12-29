@@ -262,7 +262,6 @@ class _TripDashboardState extends State<TripDashboard> {
       builder: (context) {
         String inputValue = '';
         bool isEmailTab = true;
-
         return StatefulBuilder(
           builder: (context, setModalState) {
             return Padding(
@@ -293,7 +292,6 @@ class _TripDashboardState extends State<TripDashboard> {
                     ],
                   ),
                   const SizedBox(height: 16),
-
                   // Tabs
                   Row(
                     children: [
@@ -530,7 +528,6 @@ class _TripDashboardState extends State<TripDashboard> {
           Colors.pink[100]!,
           Colors.pink,
           trip.checklistCount,
-
           onTap: () {
             // Navigate to Checklist Screen
             Navigator.push(
