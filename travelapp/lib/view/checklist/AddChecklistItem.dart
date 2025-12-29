@@ -46,24 +46,24 @@ class _AddChecklistItemState extends State<AddChecklistItem> {
       _tripMembers = [
         User(
           id: 1,
-          email: 'sarah@example.com',
           username: 'sarah',
           name: 'Sarah',
-          surname: 'Doe',
+          surname: '',
+          email: 'sarah@example.com',
         ),
         User(
           id: 2,
-          email: 'mia@example.com',
           username: 'mia',
           name: 'Mia',
-          surname: 'Johnson',
+          surname: '',
+          email: 'mia@example.com',
         ),
         User(
           id: 3,
-          email: 'lia@example.com',
           username: 'lia',
           name: 'Lia',
-          surname: 'Smith',
+          surname: '',
+          email: 'lia@example.com',
         ),
       ];
 
