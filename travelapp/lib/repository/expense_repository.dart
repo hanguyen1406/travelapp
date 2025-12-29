@@ -1,125 +1,96 @@
-import 'package:travelapp/data/network/network_api_services.dart';
-import 'package:travelapp/models/expense_model.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/app_config.dart';
+import '../models/expense_model.dart';
 
 class ExpenseRepository {
-  final NetworkApiServices _apiService = NetworkApiServices();
-  final String baseUrl =
-      'http://localhost:8080/api'; // Update with your API URL
+  static String get baseUrl => AppConfig.baseUrl;
 
-  Future<List<Expense>> getExpenses(int tripId) async {
+  static Future<Map<String, String>> _getAuthHeaders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    return {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+  }
+
+  // Get all expenses for a trip
+  static Future<List<Expense>> getExpenses(int tripId) async {
     try {
-      final response = await _apiService.getGetApiResponse(
-        '$baseUrl/trips/$tripId/expenses',
-      );
-      List<Expense> expenses = [];
-      if (response is List) {
-        expenses = response.map((e) => Expense.fromJson(e)).toList();
+      final url = Uri.parse('$baseUrl/expenses/trip/$tripId');
+      final headers = await _getAuthHeaders();
+      
+      final response = await http.get(url, headers: headers);
+      print('📊 [Expenses] GET $url - Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
+        return data.map((e) => Expense.fromJson(e)).toList();
+      } else {
+        throw Exception('Failed to load expenses: ${response.statusCode}');
       }
-      return expenses;
     } catch (e) {
-      throw Exception('Lỗi tải danh sách chi phí: $e');
+      print('❌ [Expenses] Error fetching expenses: $e');
+      throw e;
     }
   }
 
-  Future<Expense> getExpenseDetail(int expenseId) async {
+  // Get expenses by category
+  static Future<List<Expense>> getExpensesByCategory(int tripId, String category) async {
     try {
-      final response = await _apiService.getGetApiResponse(
-        '$baseUrl/expenses/$expenseId',
-      );
-      return Expense.fromJson(response);
-    } catch (e) {
-      throw Exception('Lỗi tải chi tiết chi phí: $e');
-    }
-  }
+      final url = Uri.parse('$baseUrl/expenses/category?tripId=$tripId&category=$category');
+      final headers = await _getAuthHeaders();
 
-  Future<Expense> createExpense(Map<String, dynamic> data) async {
-    try {
-      final response = await _apiService.getPostApiResponse(
-        '$baseUrl/expenses',
-        data,
-      );
-      return Expense.fromJson(response);
-    } catch (e) {
-      throw Exception('Lỗi tạo chi phí: $e');
-    }
-  }
-
-  Future<Expense> updateExpense(
-    int expenseId,
-    Map<String, dynamic> data,
-  ) async {
-    try {
-      final response = await _apiService.getPutApiResponse(
-        '$baseUrl/expenses/$expenseId',
-        data,
-      );
-      return Expense.fromJson(response);
-    } catch (e) {
-      throw Exception('Lỗi cập nhật chi phí: $e');
-    }
-  }
-
-  Future<bool> deleteExpense(int expenseId) async {
-    try {
-      await _apiService.getDeleteApiResponse('$baseUrl/expenses/$expenseId');
-      return true;
-    } catch (e) {
-      throw Exception('Lỗi xóa chi phí: $e');
-    }
-  }
-
-  Future<Map<String, dynamic>> getExpenseStats(int tripId) async {
-    try {
-      final response = await _apiService.getGetApiResponse(
-        '$baseUrl/trips/$tripId/expenses/stats',
-      );
-      return response as Map<String, dynamic>;
-    } catch (e) {
-      throw Exception('Lỗi tải thống kê chi phí: $e');
-    }
-  }
-
-  Future<List<Expense>> getExpensesByCategory(
-    int tripId,
-    String category,
-  ) async {
-    try {
-      final response = await _apiService.getGetApiResponse(
-        '$baseUrl/trips/$tripId/expenses?category=$category',
-      );
-      List<Expense> expenses = [];
-      if (response is List) {
-        expenses = response.map((e) => Expense.fromJson(e)).toList();
+      final response = await http.get(url, headers: headers);
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
+        return data.map((e) => Expense.fromJson(e)).toList();
+      } else {
+        throw Exception('Failed to load expenses category: ${response.statusCode}');
       }
-      return expenses;
     } catch (e) {
-      throw Exception('Lỗi tải chi phí theo danh mục: $e');
+      print('❌ [Expenses] Error fetching expenses by category: $e');
+      throw e;
     }
   }
 
-  Future<Map<String, dynamic>> getBalance(int tripId, int userId) async {
+  // Create expense
+  static Future<Expense> createExpense(Expense expense) async {
     try {
-      final response = await _apiService.getGetApiResponse(
-        '$baseUrl/trips/$tripId/expenses/balance/$userId',
-      );
-      return response as Map<String, dynamic>;
-    } catch (e) {
-      throw Exception('Lỗi tải số dư: $e');
-    }
-  }
+      final url = Uri.parse('$baseUrl/expenses/create');
+      final headers = await _getAuthHeaders();
+      final body = json.encode(expense.toJson());
 
-  Future<List<Map<String, dynamic>>> getSettlements(int tripId) async {
-    try {
-      final response = await _apiService.getGetApiResponse(
-        '$baseUrl/trips/$tripId/expenses/settlements',
-      );
-      List<Map<String, dynamic>> settlements = [];
-      if (response is List) {
-        settlements = response.cast<Map<String, dynamic>>();
+      final response = await http.post(url, headers: headers, body: body);
+      print('📊 [Expenses] POST $url - Status: ${response.statusCode}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return Expense.fromJson(json.decode(utf8.decode(response.bodyBytes)));
+      } else {
+        throw Exception('Failed to create expense: ${response.statusCode} - ${response.body}');
       }
-      return settlements;
     } catch (e) {
-      throw Exception('Lỗi tải thông tin thanh toán: $e');
+      print('❌ [Expenses] Error creating expense: $e');
+      throw e;
+    }
+  }
+
+  // Delete expense
+  static Future<void> deleteExpense(int expenseId) async {
+    try {
+      final url = Uri.parse('$baseUrl/expenses/$expenseId');
+      final headers = await _getAuthHeaders();
+
+      final response = await http.delete(url, headers: headers);
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw Exception('Failed to delete expense: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ [Expenses] Error deleting expense: $e');
+      throw e;
     }
   }
 }

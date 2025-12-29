@@ -42,7 +42,10 @@ dependencies:
     flutter_slidable: ^3.1.0
     image_picker: ^1.0.7
     path_provider: ^2.1.2
-    flutter_typeahead: ^4.0.0
+    flutter_typeahead: ^5.2.0
+    flutter_keyboard_visibility: ^6.0.0
+    connectivity_plus: ^6.0.5
+    file_picker: ^8.0.0
 
 dev_dependencies:
     flutter_test:

@@ -5,13 +5,13 @@ class Expense {
   final String description;
   final String category;
   final double amount;
+  final String currency;
   final DateTime date;
-  final String paidBy;
+  final String paidBy; // paidByName
   final int paidById;
-  final String paymentStatus;
+  final String splitMethod;
   final List<ExpenseSplit> splits;
   final DateTime? createdAt;
-  final DateTime? updatedAt;
 
   Expense({
     required this.id,
@@ -20,13 +20,13 @@ class Expense {
     required this.description,
     required this.category,
     required this.amount,
+    required this.currency,
     required this.date,
     required this.paidBy,
     required this.paidById,
-    required this.paymentStatus,
+    required this.splitMethod,
     required this.splits,
     this.createdAt,
-    this.updatedAt,
   });
 
   factory Expense.fromJson(Map<String, dynamic> json) {
@@ -37,12 +37,13 @@ class Expense {
       description: json['description'] ?? '',
       category: json['category'] ?? '',
       amount: (json['amount'] ?? 0).toDouble(),
-      date: json['date'] != null
-          ? DateTime.parse(json['date'])
-          : DateTime.now(),
-      paidBy: json['paidBy'] ?? '',
+      currency: json['currency'] ?? 'VND',
+      date: json['expenseDate'] != null
+          ? DateTime.parse(json['expenseDate'])
+          : (json['date'] != null ? DateTime.parse(json['date']) : DateTime.now()),
+      paidBy: json['paidByName'] ?? (json['paidBy'] ?? 'Unknown'),
       paidById: json['paidById'] ?? 0,
-      paymentStatus: json['paymentStatus'] ?? 'Pending',
+      splitMethod: json['splitMethod'] ?? 'EVEN',
       splits: json['splits'] != null
           ? List<ExpenseSplit>.from(
               (json['splits'] as List).map((x) => ExpenseSplit.fromJson(x)),
@@ -50,9 +51,6 @@ class Expense {
           : [],
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
-          : null,
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'])
           : null,
     );
   }
@@ -65,53 +63,49 @@ class Expense {
       'description': description,
       'category': category,
       'amount': amount,
-      'date': date.toIso8601String(),
-      'paidBy': paidBy,
+      'currency': currency,
+      'expenseDate': date.toIso8601String(),
+      'paidByName': paidBy,
       'paidById': paidById,
-      'paymentStatus': paymentStatus,
+      'splitMethod': splitMethod,
       'splits': splits.map((x) => x.toJson()).toList(),
       'createdAt': createdAt?.toIso8601String(),
-      'updatedAt': updatedAt?.toIso8601String(),
     };
   }
 }
 
 class ExpenseSplit {
-  final int id;
   final int expenseId;
   final int userId;
-  final String userName;
-  final double amount;
-  final bool paid;
+  final double shareAmount;
+  final double sharePercentage;
+  final bool isPaid;
 
   ExpenseSplit({
-    required this.id,
     required this.expenseId,
     required this.userId,
-    required this.userName,
-    required this.amount,
-    required this.paid,
+    required this.shareAmount,
+    required this.sharePercentage,
+    required this.isPaid,
   });
 
   factory ExpenseSplit.fromJson(Map<String, dynamic> json) {
     return ExpenseSplit(
-      id: json['id'] ?? 0,
       expenseId: json['expenseId'] ?? 0,
       userId: json['userId'] ?? 0,
-      userName: json['userName'] ?? '',
-      amount: (json['amount'] ?? 0).toDouble(),
-      paid: json['paid'] ?? false,
+      shareAmount: (json['shareAmount'] ?? 0).toDouble(),
+      sharePercentage: (json['sharePercentage'] ?? 0).toDouble(),
+      isPaid: json['isPaid'] ?? false,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
       'expenseId': expenseId,
       'userId': userId,
-      'userName': userName,
-      'amount': amount,
-      'paid': paid,
+      'shareAmount': shareAmount,
+      'sharePercentage': sharePercentage,
+      'isPaid': isPaid,
     };
   }
 }
