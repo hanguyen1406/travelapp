@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:provider/provider.dart';
 import 'package:travelapp/viewModel/trip_view_model.dart';
+import 'package:travelapp/viewModel/auth_view_model.dart';
 import 'package:travelapp/data/services/openmap_service.dart';
 
 class CreateTripScreen extends StatefulWidget {
@@ -18,10 +19,37 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
   // Key moved to AppConfig: final String openMapApiKey = "EvckMG80oLeHRhw93ZjYiqztcBvApSEP";
   DateTime? _startDate;
   DateTime? _endDate;
-  List<Map<String, String>> members = [
-    {'name': 'af', 'email': 'af@gmail.com', 'role': 'Bạn'},
-  ];
+  List<Map<String, String>> members = [];
   bool isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final authVM = Provider.of<AuthViewModel>(context, listen: false);
+      
+      // Check if we need to fetch user details
+      if ((authVM.loginResponse?.user == null || authVM.loginResponse!.user!.email!.isEmpty) && authVM.userId != null) {
+         await authVM.fetchUserDetails(authVM.userId!);
+      }
+
+      final user = authVM.loginResponse?.user;
+      if (user != null) {
+        setState(() {
+          members = [
+            {'name': user.username ?? '', 'email': user.email ?? '', 'role': 'Bạn'},
+          ];
+        });
+      } else {
+        // Fallback if still missing
+        setState(() {
+           members = [
+            {'name': 'Bạn', 'email': 'me@example.com', 'role': 'Bạn'},
+          ];
+        });
+      }
+    });
+  }
 
   void _showAddMemberSheet() {
     showModalBottomSheet(
@@ -358,7 +386,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Thành viên ( {members.length})',
+                    'Thành viên (${members.length})',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                   TextButton(

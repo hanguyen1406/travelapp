@@ -5,6 +5,8 @@ import 'package:travelapp/viewModel/auth_view_model.dart';
 import 'package:travelapp/view/trip/TripDashboard.dart';
 import 'package:travelapp/view/auth/LoginScreen.dart';
 import 'package:travelapp/view/user/ProfileScreen.dart';
+import 'package:travelapp/models/user_model.dart';
+import 'package:travelapp/view/trip/CreateTripScreen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -71,12 +73,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: _TripCard(
                               imageUrl: trip.coverImage.isNotEmpty 
                                   ? trip.coverImage 
-                                  : 'https://images.unsplash.com/photo-1506744038136-46273834b3fb',
+                                  : '',
                               title: trip.tripName,
                               location: trip.description,
                               date: _formatDate(trip.startDate, trip.endDate),
-                              members: [], // Logic to map members if needed
-                              memberColors: [],
+                              members: trip.members,
                               peopleCount: trip.memberCount,
                             ),
                           );
@@ -87,11 +88,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         right: 24,
                         child: FloatingActionButton(
                           onPressed: () {
-                             // Navigate effectively
-                             // Navigator.pushNamed(context, '/create');
+                             Navigator.push(
+                               context,
+                               MaterialPageRoute(builder: (context) => const CreateTripScreen()),
+                             );
                           },
                           backgroundColor: Colors.blue,
-                          child: const Icon(Icons.add, size: 32),
+                          shape: const CircleBorder(),
+                          child: const Icon(Icons.add, size: 32, color: Colors.white),
                         ),
                       ),
                     ],
@@ -218,13 +222,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+
+
 class _TripCard extends StatelessWidget {
   final String imageUrl;
   final String title;
   final String location;
   final String date;
-  final List<String> members;
-  final List<Color> memberColors;
+  final List<User> members;
   final int peopleCount;
 
   const _TripCard({
@@ -233,7 +238,6 @@ class _TripCard extends StatelessWidget {
     required this.location,
     required this.date,
     required this.members,
-    required this.memberColors,
     required this.peopleCount,
   });
 
@@ -248,7 +252,7 @@ class _TripCard extends StatelessWidget {
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 8,
-            offset: Offset(0, 4),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -256,61 +260,110 @@ class _TripCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            child: Image.network(
-              imageUrl,
-              height: 120,
-              width: double.infinity,
-              fit: BoxFit.cover,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            child: Stack(
+              children: [
+                 if (imageUrl.isNotEmpty)
+                    Image.network(
+                      imageUrl,
+                      height: 150,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
+                    )
+                 else
+                    _buildPlaceholder(),
+
+                // Gradient Overlay
+                Container(
+                    height: 150,
+                    decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
+                            colors: [Colors.black.withOpacity(0.7), Colors.transparent],
+                        ),
+                    ),
+                ),
+                Positioned(
+                    bottom: 30,
+                    left: 12, right: 12,
+                    child: Text(
+                        title,
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                    ),
+                ),
+                Positioned(
+                    bottom: 10,
+                    left: 12,
+                    child: Row(
+                        children: [
+                            const Icon(Icons.location_on_outlined, color: Colors.white70, size: 14),
+                            const SizedBox(width: 4),
+                            Text(
+                                location,
+                                style: const TextStyle(color: Colors.white70, fontSize: 13),
+                            ),
+                        ],
+                    ),
+                ),
+              ],
             ),
           ),
+          
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                ),
-                const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(
-                      Icons.location_on_outlined,
-                      size: 16,
-                      color: Colors.grey,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      location,
-                      style: TextStyle(color: Colors.grey, fontSize: 11),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(
+                    const Icon(
                       Icons.calendar_today_outlined,
                       size: 16,
                       color: Colors.grey,
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 6),
                     Text(
                       date,
-                      style: TextStyle(color: Colors.grey, fontSize: 11),
+                      style: const TextStyle(color: Colors.grey, fontSize: 13),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(Icons.people_outline, size: 16, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    Text(
-                      '$peopleCount người',
-                      style: TextStyle(color: Colors.grey, fontSize: 11),
+                    Row(
+                      children: [
+                        const Icon(Icons.people_outline, size: 16, color: Colors.grey),
+                        const SizedBox(width: 6),
+                        Text(
+                          '$peopleCount người',
+                          style: const TextStyle(color: Colors.grey, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                    
+                    // Avatars
+                    Row(
+                        children: members.take(4).map((member) {
+                             // Simple color generation based on name length or char code
+                             final color = Colors.primaries[member.username.length % Colors.primaries.length];
+                             return Padding(
+                               padding: const EdgeInsets.only(left: 4),
+                               child: CircleAvatar(
+                                 radius: 12, // Small avatar
+                                 backgroundColor: color,
+                                 child: Text(
+                                   member.username.isNotEmpty ? member.username[0].toUpperCase() : '?',
+                                   style: const TextStyle(color: Colors.white, fontSize: 10),
+                                 ),
+                               ),
+                             );
+                        }).toList(),
                     ),
                   ],
                 ),
@@ -318,6 +371,20 @@ class _TripCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+  Widget _buildPlaceholder() {
+    return Container(
+      height: 150,
+      width: double.infinity,
+      color: Colors.grey[200], // Light grey as requested
+      child: Center(
+        child: Icon(
+          Icons.image_not_supported_outlined,
+          size: 40,
+          color: Colors.grey[400],
+        ),
       ),
     );
   }

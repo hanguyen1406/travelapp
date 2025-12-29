@@ -8,6 +8,7 @@ import 'package:travelapp/viewModel/itinerary_view_model.dart';
 import 'package:travelapp/viewModel/checklist_view_model.dart';
 import 'package:travelapp/viewModel/expense_view_model.dart';
 import 'package:travelapp/view/bill/ExpenseList.dart';
+import 'package:travelapp/view/auth/LoginScreen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,7 +33,7 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         title: 'Travel App',
         theme: ThemeData(primarySwatch: Colors.blue),
-        home: const ExpenseListScreen(tripId: 1),
+        home: const LoginScreen(),
       ),
     );
   }
