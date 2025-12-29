@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:travelapp/models/expense_model.dart';
 import 'package:travelapp/models/user_model.dart';
+import 'package:travelapp/viewModel/expense_view_model.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   final int tripId;

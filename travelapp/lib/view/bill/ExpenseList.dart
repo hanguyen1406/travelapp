@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:travelapp/viewModel/trip_view_model.dart';
 import 'package:travelapp/view/bill/AddExpense.dart';
 import 'package:travelapp/view/bill/BalanceSu.dart';
 
