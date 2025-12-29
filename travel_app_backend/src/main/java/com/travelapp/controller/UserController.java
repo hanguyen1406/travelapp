@@ -94,6 +94,22 @@ public class UserController {
 		return new ResponseEntity<UserDTO>(HttpStatus.NOT_FOUND);
 	}
 
+	@GetMapping("/id/{id}")
+	public ResponseEntity<?> getUserById(@PathVariable("id") Long id) {
+		Optional<User> user = userService.findOne(id);
+		if (user.isPresent()) {
+			User u = user.get();
+			Set<RoleDTO> roles = new HashSet<>();
+			for (Role role : u.getRoles()) {
+				roles.add(new RoleDTO(role.getId(), role.getName()));
+			}
+			UserDTO dto = new UserDTO(u.getId(), u.getName(), u.getSurname(), u.getUsername(),
+					u.getEmail(), u.getPassword(), roles);
+			return new ResponseEntity<>(dto, HttpStatus.OK);
+		}
+		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+	}
+
 	@PostMapping
 	@PreAuthorize("hasRole('ADMINISTRATOR')")
 	public ResponseEntity<User> create(@RequestBody User user) {

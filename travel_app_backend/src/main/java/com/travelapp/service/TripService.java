@@ -25,6 +25,12 @@ public class TripService {
                 .collect(java.util.stream.Collectors.toList());
     }
 
+    public java.util.List<TripDTO> getTripsByUserId(Long userId) {
+        return tripRepository.findDistinctByCreatedByIdOrMembersId(userId, userId).stream()
+                .map(this::convertToDTO)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
     public TripDTO getTripById(Long id) {
         Trip trip = tripRepository.findById(id).orElseThrow(() -> new RuntimeException("Trip not found"));
         return convertToDTO(trip);

@@ -17,7 +17,23 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 @Table(name = "documents")
 public class Document {
 
-    @Id
+    public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getFileSize() {
+		return fileSize;
+	}
+
+	public void setFileSize(String fileSize) {
+		this.fileSize = fileSize;
+	}
+
+	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
@@ -50,48 +66,96 @@ public class Document {
     }
 
     // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public String getCategory() { return category; }
-    public void setCategory(String category) { this.category = category; }
+    public String getCategory() {
+        return category;
+    }
 
-    public String getOriginalFileName() { return originalFileName; }
-    public void setOriginalFileName(String originalFileName) { this.originalFileName = originalFileName; }
+    public void setCategory(String category) {
+        this.category = category;
+    }
 
-    public String getUrl() { return url; }
-    public void setUrl(String url) { this.url = url; }
+    public String getOriginalFileName() {
+        return originalFileName;
+    }
 
-    public String getFileSize() { return fileSize; }
-    public void setFileSize(String fileSize) { this.fileSize = fileSize; }
+    public void setUrl(String url) {
+        this.url = url;
+    }
 
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
+    public void setOriginalFileName(String originalFileName) {
+        this.originalFileName = originalFileName;
+    }
 
-    public Boolean getOfflineAvailable() { return offlineAvailable; }
-    public void setOfflineAvailable(Boolean offlineAvailable) { this.offlineAvailable = offlineAvailable; }
+    public String getType() {
+        return type;
+    }
 
-    public Boolean getIsImportant() { return isImportant; }
-    public void setIsImportant(Boolean isImportant) { this.isImportant = isImportant; }
+    public void setType(String type) {
+        this.type = type;
+    }
 
-    public User getUploadedBy() { return uploadedBy; }
-    public void setUploadedBy(User uploadedBy) { this.uploadedBy = uploadedBy; }
+    public Boolean getOfflineAvailable() {
+        return offlineAvailable;
+    }
 
-    public Trip getTrip() { return trip; }
-    public void setTrip(Trip trip) { this.trip = trip; }
+    public void setOfflineAvailable(Boolean offlineAvailable) {
+        this.offlineAvailable = offlineAvailable;
+    }
 
-    public Date getCreatedAt() { return createdAt; }
-    public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
+    public Boolean getIsImportant() {
+        return isImportant;
+    }
 
-    public Date getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
+    public void setIsImportant(Boolean isImportant) {
+        this.isImportant = isImportant;
+    }
+
+    public User getUploadedBy() {
+        return uploadedBy;
+    }
+
+    public void setUploadedBy(User uploadedBy) {
+        this.uploadedBy = uploadedBy;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Date getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public Trip getTrip() {
+        return trip;
+    }
+
+    public void setTrip(Trip trip) {
+        this.trip = trip;
+    }
 
     @PreUpdate
     public void preUpdate() {
         this.updatedAt = new Date();
     }
 }
-
