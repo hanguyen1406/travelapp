@@ -9,11 +9,8 @@ class AddChecklistItem extends StatefulWidget {
   final int tripId;
   final ChecklistItem? editItem;
 
-  const AddChecklistItem({
-    Key? key,
-    required this.tripId,
-    this.editItem,
-  }) : super(key: key);
+  const AddChecklistItem({Key? key, required this.tripId, this.editItem})
+    : super(key: key);
 
   @override
   State<AddChecklistItem> createState() => _AddChecklistItemState();
@@ -29,8 +26,12 @@ class _AddChecklistItemState extends State<AddChecklistItem> {
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.editItem?.title ?? '');
-    _descriptionController = TextEditingController(text: widget.editItem?.description ?? '');
+    _titleController = TextEditingController(
+      text: widget.editItem?.title ?? '',
+    );
+    _descriptionController = TextEditingController(
+      text: widget.editItem?.description ?? '',
+    );
     _selectedUser = null;
 
     // Load trip members
@@ -45,24 +46,24 @@ class _AddChecklistItemState extends State<AddChecklistItem> {
       _tripMembers = [
         User(
           id: 1,
+          username: 'sarah',
+          name: 'Sarah',
+          surname: '',
           email: 'sarah@example.com',
-          firstName: 'Sarah',
-          lastName: '',
-          avatar: null,
         ),
         User(
           id: 2,
+          username: 'mia',
+          name: 'Mia',
+          surname: '',
           email: 'mia@example.com',
-          firstName: 'Mia',
-          lastName: '',
-          avatar: null,
         ),
         User(
           id: 3,
+          username: 'lia',
+          name: 'Lia',
+          surname: '',
           email: 'lia@example.com',
-          firstName: 'Lia',
-          lastName: '',
-          avatar: null,
         ),
       ];
 
@@ -104,56 +105,60 @@ class _AddChecklistItemState extends State<AddChecklistItem> {
             widget.tripId,
             widget.editItem!.id,
             _titleController.text,
-            description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
+            description: _descriptionController.text.isEmpty
+                ? null
+                : _descriptionController.text,
             assignedUserId: _selectedUser?.id,
           )
           .then((success) {
-        setState(() => _isLoading = false);
-        if (success) {
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Cập nhật thành công!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Lỗi: ${viewModel.error}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      });
+            setState(() => _isLoading = false);
+            if (success) {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Cập nhật thành công!'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Lỗi: ${viewModel.error}'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          });
     } else {
       // Add new item
       viewModel
           .addChecklistItem(
             widget.tripId,
             _titleController.text,
-            description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
+            description: _descriptionController.text.isEmpty
+                ? null
+                : _descriptionController.text,
             assignedUserId: _selectedUser?.id,
           )
           .then((success) {
-        setState(() => _isLoading = false);
-        if (success) {
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Thêm thành công!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Lỗi: ${viewModel.error}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      });
+            setState(() => _isLoading = false);
+            if (success) {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Thêm thành công!'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Lỗi: ${viewModel.error}'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          });
     }
   }
 
@@ -170,7 +175,10 @@ class _AddChecklistItemState extends State<AddChecklistItem> {
         ),
         title: Text(
           widget.editItem != null ? 'Chỉnh sửa công việc' : 'Thêm công việc',
-          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
+          style: const TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         centerTitle: true,
       ),
@@ -271,7 +279,7 @@ class _AddChecklistItemState extends State<AddChecklistItem> {
                                 radius: 16,
                                 backgroundColor: _getAvatarColor(user.id),
                                 child: Text(
-                                  user.firstName[0].toUpperCase(),
+                                  user.name[0].toUpperCase(),
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
@@ -279,7 +287,7 @@ class _AddChecklistItemState extends State<AddChecklistItem> {
                                 ),
                               ),
                               const SizedBox(width: 12),
-                              Text(user.firstName),
+                              Text(user.name),
                             ],
                           ),
                         );
@@ -309,9 +317,14 @@ class _AddChecklistItemState extends State<AddChecklistItem> {
                   runSpacing: 8,
                   children: _tripMembers.map<Widget>((user) {
                     return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
-                        color: _selectedUser?.id == user.id ? const Color(0xFF3B82F6) : Colors.grey[200],
+                        color: _selectedUser?.id == user.id
+                            ? const Color(0xFF3B82F6)
+                            : Colors.grey[200],
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
@@ -321,7 +334,7 @@ class _AddChecklistItemState extends State<AddChecklistItem> {
                             radius: 12,
                             backgroundColor: _getAvatarColor(user.id),
                             child: Text(
-                              user.firstName[0].toUpperCase(),
+                              user.name[0].toUpperCase(),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 10,
@@ -331,11 +344,13 @@ class _AddChecklistItemState extends State<AddChecklistItem> {
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            user.firstName,
+                            user.name,
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
-                              color: _selectedUser?.id == user.id ? Colors.white : Colors.black87,
+                              color: _selectedUser?.id == user.id
+                                  ? Colors.white
+                                  : Colors.black87,
                             ),
                           ),
                         ],
@@ -361,15 +376,15 @@ class _AddChecklistItemState extends State<AddChecklistItem> {
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Thêm tất cả thành viên vào công việc này'),
+                        content: Text(
+                          'Thêm tất cả thành viên vào công việc này',
+                        ),
                       ),
                     );
                   },
                   child: const Text(
                     'Thêm tất cả thành viên',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -400,7 +415,9 @@ class _AddChecklistItemState extends State<AddChecklistItem> {
                   ),
                 )
               : Text(
-                  widget.editItem != null ? 'Cập nhật công việc' : 'Thêm công việc',
+                  widget.editItem != null
+                      ? 'Cập nhật công việc'
+                      : 'Thêm công việc',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
