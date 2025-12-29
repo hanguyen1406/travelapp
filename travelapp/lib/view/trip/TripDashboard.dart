@@ -8,6 +8,7 @@ import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:travelapp/view/checklist/ChecklistScreen.dart';
 import 'package:intl/intl.dart';
 import 'package:travelapp/view/documents/DocumentVaultScreen.dart';
+import '../bill/ExpenseList.dart';
 
 class TripDashboard extends StatefulWidget {
   final int tripId;
@@ -519,6 +520,14 @@ class _TripDashboardState extends State<TripDashboard> {
           Colors.green[100]!,
           Colors.green,
           trip.expenseCount,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ExpenseListScreen(tripId: trip.id),
+              ),
+            );
+          },
         ),
         _buildGridItem(
           "Tài liệu",

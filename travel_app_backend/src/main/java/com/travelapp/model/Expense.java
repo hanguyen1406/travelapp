@@ -17,6 +17,7 @@ public class Expense {
     private String description;
     private Double amount;
     private String currency;
+    private String category;
 
     @ManyToOne
     @JoinColumn(name = "paid_by")
@@ -44,36 +45,99 @@ public class Expense {
         this.createdAt = new Date();
     }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public String getTitle() {
+        return title;
+    }
 
-    public Double getAmount() { return amount; }
-    public void setAmount(Double amount) { this.amount = amount; }
+    public void setTitle(String title) {
+        this.title = title;
+    }
 
-    public String getCurrency() { return currency; }
-    public void setCurrency(String currency) { this.currency = currency; }
+    public String getDescription() {
+        return description;
+    }
 
-    public User getPaidBy() { return paidBy; }
-    public void setPaidBy(User paidBy) { this.paidBy = paidBy; }
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
-    public SplitMethod getSplitMethod() { return splitMethod; }
-    public void setSplitMethod(SplitMethod splitMethod) { this.splitMethod = splitMethod; }
+    public Double getAmount() {
+        return amount;
+    }
 
-    public Date getExpenseDate() { return expenseDate; }
-    public void setExpenseDate(Date expenseDate) { this.expenseDate = expenseDate; }
+    public void setAmount(Double amount) {
+        this.amount = amount;
+    }
 
-    public Date getCreatedAt() { return createdAt; }
-    public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
+    public String getCurrency() {
+        return currency;
+    }
 
-    public Trip getTrip() { return trip; }
-    public void setTrip(Trip trip) { this.trip = trip; }
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
 
-    public List<ExpenseSplit> getSplits() { return splits; }
-    public void setSplits(List<ExpenseSplit> splits) { this.splits = splits; }
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public User getPaidBy() {
+        return paidBy;
+    }
+
+    public void setPaidBy(User paidBy) {
+        this.paidBy = paidBy;
+    }
+
+    public SplitMethod getSplitMethod() {
+        return splitMethod;
+    }
+
+    public void setSplitMethod(SplitMethod splitMethod) {
+        this.splitMethod = splitMethod;
+    }
+
+    public Date getExpenseDate() {
+        return expenseDate;
+    }
+
+    public void setExpenseDate(Date expenseDate) {
+        this.expenseDate = expenseDate;
+    }
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Trip getTrip() {
+        return trip;
+    }
+
+    public void setTrip(Trip trip) {
+        this.trip = trip;
+    }
+
+    public List<ExpenseSplit> getSplits() {
+        return splits;
+    }
+
+    public void setSplits(List<ExpenseSplit> splits) {
+        this.splits = splits;
+    }
 }

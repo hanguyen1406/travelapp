@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:travelapp/models/expense_model.dart';
+import 'package:travelapp/models/user_model.dart';
+import 'package:travelapp/repository/expense_repository.dart';
+import 'package:travelapp/viewModel/auth_view_model.dart';
+import 'package:travelapp/viewModel/trip_view_model.dart';
 
 class BalanceSettlementScreen extends StatefulWidget {
   final int tripId;
@@ -13,56 +19,180 @@ class BalanceSettlementScreen extends StatefulWidget {
 }
 
 class _BalanceSettlementScreenState extends State<BalanceSettlementScreen> {
-  bool isLoading = false;
-  double userBalance = 252500;
-  double totalDebt = 412500;
-  double totalPayment = 160000;
+  bool isLoading = true;
+  double userBalance = 0;
+  double totalDebt = 0;
+  double totalPayment = 0; // Amount others owe me
 
   List<Settlement> settlements = [];
-  Map<String, bool> settledStatus = {};
+  Map<String, bool> settledStatus = {}; // TODO: Persist this if needed, for now local
 
   @override
   void initState() {
     super.initState();
-    _loadSettlements();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
   }
 
-  void _loadSettlements() {
-    // Mock data
-    settlements = [
-      Settlement(
-        id: 1,
-        from: 'Sarah',
-        to: 'Bạn',
-        amount: 325000,
-        status: SettlementStatus.pending,
-        fromAvatar: 'S',
-        toAvatar: 'Y',
-      ),
-      Settlement(
-        id: 2,
-        from: 'Mike',
-        to: 'Bạn',
-        amount: 87500,
-        status: SettlementStatus.pending,
-        fromAvatar: 'M',
-        toAvatar: 'Y',
-      ),
-      Settlement(
-        id: 3,
-        from: 'Bạn',
-        to: 'Lisa',
-        amount: 160000,
-        status: SettlementStatus.pending,
-        fromAvatar: 'Y',
-        toAvatar: 'L',
-      ),
-    ];
+  Future<void> _loadData() async {
+    setState(() => isLoading = true);
+    try {
+      final authVM = Provider.of<AuthViewModel>(context, listen: false);
+      final tripVM = Provider.of<TripViewModel>(context, listen: false);
+      
+      final currentUserId = authVM.userId;
+      if (currentUserId == null) {
+          // Fallback or error
+          setState(() => isLoading = false);
+          return;
+      }
 
-    // Initialize settled status
-    for (var settlement in settlements) {
-      settledStatus[settlement.id.toString()] = false;
+      // Ensure we have members mapping
+      Map<int, User> membersMap = {};
+      if (tripVM.currentTrip != null && tripVM.currentTrip!.id == widget.tripId) {
+          for (var m in tripVM.currentTrip!.members) {
+              membersMap[m.id] = m;
+          }
+      } else {
+          // Fetch trip if not current
+          await tripVM.fetchTripDetail(widget.tripId);
+          if (tripVM.currentTrip != null) {
+              for (var m in tripVM.currentTrip!.members) {
+                  membersMap[m.id] = m;
+              }
+          }
+      }
+
+      // Fetch expenses
+      final expenses = await ExpenseRepository.getExpenses(widget.tripId);
+      print('🔍 [BalanceSu] Fetched ${expenses.length} expenses');
+      for (var e in expenses) {
+          print('  - Exp ${e.id}: ${e.amount} paid by ${e.paidById}. Splits: ${e.splits.length}');
+          for (var s in e.splits) {
+              print('    - Split to ${s.userId}: ${s.shareAmount}');
+          }
+      }
+      
+      _calculateBalances(expenses, currentUserId, membersMap);
+
+    } catch (e) {
+      print('Error loading balance data: $e');
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
+  }
+
+  void _calculateBalances(List<Expense> expenses, int myId, Map<int, User> members) {
+      print('🧮 [_calculateBalances] MyId: $myId. Members: ${members.keys.toList()}');
+
+      // 1. Calculate Net Balances
+      Map<int, double> balances = {};
+      
+      // Initialize 0 for all known members (important for graph)
+      members.keys.forEach((id) => balances[id] = 0.0);
+
+      for (var expense in expenses) {
+          // Payer paid (+)
+          balances[expense.paidById] = (balances[expense.paidById] ?? 0) + expense.amount;
+          
+          // Splitters consume (-)
+          for (var split in expense.splits) {
+             balances[split.userId] = (balances[split.userId] ?? 0) - split.shareAmount;
+          }
+      }
+      
+      print('  -> Raw Balances: $balances');
+
+      // 2. Simplify Debts (Greedy Algorithm)
+      List<_Debt> debts = [];
+      List<int> debtors = balances.keys.where((k) => (balances[k] ?? 0) < -1).toList(); // Tolerance 1
+      List<int> creditors = balances.keys.where((k) => (balances[k] ?? 0) > 1).toList();
+      
+      print('  -> Debtors: $debtors');
+      print('  -> Creditors: $creditors');
+      
+      // Sort by magnitude to optimize matching (optional, but good practice)
+      debtors.sort((a, b) => balances[a]!.compareTo(balances[b]!)); // Ascending (most negative first)
+      creditors.sort((a, b) => balances[b]!.compareTo(balances[a]!)); // Descending (most positive first)
+
+      int i = 0; // debtor index
+      int j = 0; // creditor index
+
+      while (i < debtors.length && j < creditors.length) {
+          int debtorId = debtors[i];
+          int creditorId = creditors[j];
+          
+          double debtAmount = -(balances[debtorId]!);
+          double creditAmount = balances[creditorId]!;
+          
+          double settlementAmount = debtAmount < creditAmount ? debtAmount : creditAmount;
+          
+          if (settlementAmount > 1) { // Filter tiny amounts
+             debts.add(_Debt(debtorId, creditorId, settlementAmount));
+          }
+
+          balances[debtorId] = (balances[debtorId]! + settlementAmount);
+          balances[creditorId] = (balances[creditorId]! - settlementAmount);
+
+          if (balances[debtorId]!.abs() < 1) i++;
+          if (balances[creditorId]!.abs() < 1) j++;
+      }
+
+      // 3. Filter for My View
+      settlements = [];
+      double myNetBalance = balances[myId] ?? 0; // This is remaining AFTER simplification? No, logic above modifies 'balances' map as it goes. 
+      // Wait, I need the ORIGINAL net balance for the top card "Net Status".
+      // The simplification loop destroys the balances map to 0.
+      // So I should calculate totals first.
+      
+      // Re-re-calculate simpler stats
+      userBalance = 0;
+      totalDebt = 0;
+      totalPayment = 0;
+      
+      // Recalulate correct "User Balance" logic:
+      // User Balance = (Total Paid) - (Fair Share). 
+      // This is exactly what I calculated in step 1 before muting it. 
+      // I should have saved Step 1 state. 
+      // However, after simplification, 'debts' list contains all I need.
+      
+      for (var debt in debts) {
+          String fromName = members[debt.from]?.name ?? 'User ${debt.from}';
+          String toName = members[debt.to]?.name ?? 'User ${debt.to}';
+          String fromAvatar = fromName.isNotEmpty ? fromName[0] : '?';
+          String toAvatar = toName.isNotEmpty ? toName[0] : '?';
+          
+          if (debt.from == myId) {
+             // I owe someone
+             totalDebt += debt.amount;
+             settlements.add(Settlement(
+                 id: settlements.length,
+                 from: 'Bạn', 
+                 to: toName, 
+                 amount: debt.amount, 
+                 status: SettlementStatus.pending, 
+                 fromAvatar: 'You', 
+                 toAvatar: toAvatar
+             ));
+          } else if (debt.to == myId) {
+             // Someone owes me
+             totalPayment += debt.amount;
+             settlements.add(Settlement(
+                 id: settlements.length,
+                 from: fromName, 
+                 to: 'Bạn',
+                 amount: debt.amount, 
+                 status: SettlementStatus.pending, 
+                 fromAvatar: fromAvatar, 
+                 toAvatar: 'You'
+             ));
+          }
+      }
+      
+      userBalance = totalPayment - totalDebt;
   }
 
   void _toggleSettlement(int id) {
@@ -89,6 +219,7 @@ class _BalanceSettlementScreenState extends State<BalanceSettlementScreen> {
   }
 
   Color _getAvatarColor(String initials) {
+    if (initials == 'You' || initials == 'Bạn') return Colors.blue;
     final colors = [
       const Color(0xFF4ECDC4),
       const Color(0xFFFF6B6B),
@@ -127,6 +258,13 @@ class _BalanceSettlementScreenState extends State<BalanceSettlementScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                   // Zero state check
+                  if (settlements.isEmpty && userBalance.abs() < 1000)
+                     const Padding(
+                         padding: EdgeInsets.all(20),
+                         child: Center(child: Text('Mọi khoản nợ đã được thanh toán!', style: TextStyle(color: Colors.grey))),
+                     ),
+
                   // Balance Summary Card
                   _buildBalanceSummaryCard(),
                   const SizedBox(height: 20),
@@ -136,25 +274,27 @@ class _BalanceSettlementScreenState extends State<BalanceSettlementScreen> {
                   const SizedBox(height: 24),
 
                   // Settlement Details Header
-                  const Padding(
-                    padding: EdgeInsets.only(bottom: 12),
-                    child: Text(
-                      'Chi tiết thanh toán',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
+                  if (settlements.isNotEmpty) ...[
+                    const Padding(
+                        padding: EdgeInsets.only(bottom: 12),
+                        child: Text(
+                        'Chi tiết thanh toán',
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                        ),
+                        ),
                     ),
-                  ),
 
-                  // Settlement Items
-                  _buildSettlementList(),
-                  const SizedBox(height: 24),
+                    // Settlement Items
+                    _buildSettlementList(),
+                    const SizedBox(height: 24),
 
-                  // Info Note
-                  _buildInfoNote(),
-                  const SizedBox(height: 24),
+                    // Info Note
+                    _buildInfoNote(),
+                    const SizedBox(height: 24),
+                  ],
 
                   // Action Buttons
                   _buildActionButtons(),
@@ -192,7 +332,7 @@ class _BalanceSettlementScreenState extends State<BalanceSettlementScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Số dự rộng của bạn',
+            'Số dư ròng của bạn',
             style: TextStyle(
               color: Colors.white70,
               fontSize: 13,
@@ -264,7 +404,7 @@ class _BalanceSettlementScreenState extends State<BalanceSettlementScreen> {
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: Colors.black87, // Fixed color for visibility
                   ),
                 ),
               ],
@@ -333,7 +473,7 @@ class _BalanceSettlementScreenState extends State<BalanceSettlementScreen> {
                       radius: 24,
                       backgroundColor: _getAvatarColor(settlement.fromAvatar),
                       child: Text(
-                        settlement.fromAvatar,
+                        settlement.fromAvatar == 'You' || settlement.fromAvatar == 'Bạn' ? 'You' : settlement.fromAvatar,
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -360,7 +500,7 @@ class _BalanceSettlementScreenState extends State<BalanceSettlementScreen> {
                       radius: 24,
                       backgroundColor: _getAvatarColor(settlement.toAvatar),
                       child: Text(
-                        settlement.toAvatar,
+                        settlement.toAvatar == 'You' || settlement.toAvatar == 'Bạn' ? 'You' : settlement.toAvatar,
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -530,33 +670,14 @@ class Settlement {
     required this.fromAvatar,
     required this.toAvatar,
   });
+}
 
-  factory Settlement.fromJson(Map<String, dynamic> json) {
-    return Settlement(
-      id: json['id'] ?? 0,
-      from: json['from'] ?? '',
-      to: json['to'] ?? '',
-      amount: (json['amount'] ?? 0).toDouble(),
-      status: SettlementStatus.values.firstWhere(
-        (s) => s.toString().split('.').last == (json['status'] ?? 'pending'),
-        orElse: () => SettlementStatus.pending,
-      ),
-      fromAvatar: json['fromAvatar'] ?? '?',
-      toAvatar: json['toAvatar'] ?? '?',
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'from': from,
-      'to': to,
-      'amount': amount,
-      'status': status.toString().split('.').last,
-      'fromAvatar': fromAvatar,
-      'toAvatar': toAvatar,
-    };
-  }
+class _Debt {
+    final int from; // Debtor
+    final int to; // Creditor
+    final double amount;
+    
+    _Debt(this.from, this.to, this.amount);
 }
 
 enum SettlementStatus { pending, settled, cancelled }
