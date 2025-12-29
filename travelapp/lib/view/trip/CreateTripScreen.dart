@@ -274,23 +274,27 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
               ),
               const SizedBox(height: 16),
               TypeAheadField<Map<String, String>>(
-                textFieldConfiguration: TextFieldConfiguration(
-                  controller: _destinationController,
-                  style: const TextStyle(fontSize: 13),
-                  decoration: InputDecoration(
-                    labelText: 'Điểm đến',
-                    labelStyle: const TextStyle(fontSize: 13),
-                    hintText: 'VD: Đà Lạt, Lâm Đồng',
-                    hintStyle: const TextStyle(fontSize: 13),
-                    prefixIcon: const Icon(Icons.location_on_outlined),
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
+                controller: _destinationController,
+                builder: (context, controller, focusNode) {
+                  return TextField(
+                    controller: controller,
+                    focusNode: focusNode,
+                    style: const TextStyle(fontSize: 13),
+                    decoration: InputDecoration(
+                      labelText: 'Điểm đến',
+                      labelStyle: const TextStyle(fontSize: 13),
+                      hintText: 'VD: Đà Lạt, Lâm Đồng',
+                      hintStyle: const TextStyle(fontSize: 13),
+                      prefixIcon: const Icon(Icons.location_on_outlined),
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                },
                 suggestionsCallback: fetchLocationSuggestions,
                 itemBuilder: (context, suggestion) {
                   return ListTile(
@@ -299,7 +303,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                     subtitle: Text(suggestion['address']!, style: const TextStyle(fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
                   );
                 },
-                onSuggestionSelected: (suggestion) {
+                onSelected: (suggestion) {
                   _destinationController.text = suggestion['name']!;
                 },
               ),

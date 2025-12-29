@@ -71,12 +71,16 @@ class _SuggestActivityState extends State<SuggestActivity> {
             _buildLabel("Vị trí"),
             TypeAheadField(
               debounceDuration: const Duration(milliseconds: 1000),
-              textFieldConfiguration: TextFieldConfiguration(
-                 controller: _locationController,
-                 decoration: _inputDecoration("e.g. Tabanan, Bali").copyWith(
-                  prefixIcon: const Icon(Icons.location_on_outlined),
-                 ),
-              ),
+              controller: _locationController,
+              builder: (context, controller, focusNode) {
+                 return TextField(
+                   controller: controller,
+                   focusNode: focusNode,
+                   decoration: _inputDecoration("e.g. Tabanan, Bali").copyWith(
+                    prefixIcon: const Icon(Icons.location_on_outlined),
+                   ),
+                 );
+              },
               suggestionsCallback: (pattern) async {
                 return await OpenMapService().getLocationSuggestions(pattern);
               },
@@ -88,7 +92,7 @@ class _SuggestActivityState extends State<SuggestActivity> {
                   subtitle: Text(map['address']!, maxLines: 1, overflow: TextOverflow.ellipsis),
                 );
               },
-              onSuggestionSelected: (suggestion) {
+              onSelected: (suggestion) {
                 final map = suggestion as Map<String, String>;
                 _locationController.text = map['name']!;
               },
