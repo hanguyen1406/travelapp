@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:travelapp/viewModel/auth_view_model.dart';
 import 'package:travelapp/viewModel/trip_view_model.dart';
