@@ -18,12 +18,14 @@ class TripDashboard extends StatefulWidget {
 }
 
 class _TripDashboardState extends State<TripDashboard> {
-
   @override
   void initState() {
     super.initState();
-     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<TripViewModel>(context, listen: false).fetchTripDetail(widget.tripId);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<TripViewModel>(
+        context,
+        listen: false,
+      ).fetchTripDetail(widget.tripId);
     });
   }
 
@@ -130,9 +132,10 @@ class _TripDashboardState extends State<TripDashboard> {
       decoration: BoxDecoration(
         image: DecorationImage(
           image: NetworkImage(
-              trip.coverImage.isNotEmpty 
-              ? trip.coverImage 
-              : 'https://images.unsplash.com/photo-1506744038136-46273834b3fb'),
+            trip.coverImage.isNotEmpty
+                ? trip.coverImage
+                : 'https://images.unsplash.com/photo-1506744038136-46273834b3fb',
+          ),
           fit: BoxFit.cover,
         ),
       ),
@@ -161,22 +164,20 @@ class _TripDashboardState extends State<TripDashboard> {
             const SizedBox(height: 8),
             Text(
               trip.description,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 16,
-              ),
+              style: const TextStyle(color: Colors.white70, fontSize: 16),
             ),
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(Icons.calendar_today, color: Colors.white70, size: 14),
+                const Icon(
+                  Icons.calendar_today,
+                  color: Colors.white70,
+                  size: 14,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   _formatDateRange(trip.startDate, trip.endDate),
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
                 ),
               ],
             ),
@@ -194,7 +195,7 @@ class _TripDashboardState extends State<TripDashboard> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-           BoxShadow(
+          BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 5),
@@ -208,31 +209,44 @@ class _TripDashboardState extends State<TripDashboard> {
             children: [
               const Icon(Icons.people_outline, color: Colors.grey),
               const SizedBox(width: 8),
-              Text("Các thành viên (${trip.memberCount})", style: const TextStyle(fontWeight: FontWeight.w600)),
+              Text(
+                "Các thành viên (${trip.memberCount})",
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
             ],
           ),
           Row(
             children: [
-               ...trip.members.take(4).map((m) => _buildAvatar(m.name.isNotEmpty ? m.name[0].toUpperCase() : '?', Colors.blue)),
-               if (trip.memberCount > 4)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 4.0),
-                    child: CircleAvatar(
-                      radius: 14,
-                      backgroundColor: Colors.grey[300],
-                      child: Text('+${trip.memberCount - 4}', style: const TextStyle(fontSize: 10, color: Colors.black)),
+              ...trip.members
+                  .take(4)
+                  .map(
+                    (m) => _buildAvatar(
+                      m.name.isNotEmpty ? m.name[0].toUpperCase() : '?',
+                      Colors.blue,
                     ),
                   ),
-               GestureDetector(
-                 onTap: () => _showAddMemberSheet(trip.id),
-                 child: CircleAvatar(
-                   radius: 14,
-                   backgroundColor: Colors.grey[200],
-                   child: const Icon(Icons.add, size: 16, color: Colors.black54),
-                 ),
-               ),
+              if (trip.memberCount > 4)
+                Padding(
+                  padding: const EdgeInsets.only(right: 4.0),
+                  child: CircleAvatar(
+                    radius: 14,
+                    backgroundColor: Colors.grey[300],
+                    child: Text(
+                      '+${trip.memberCount - 4}',
+                      style: const TextStyle(fontSize: 10, color: Colors.black),
+                    ),
+                  ),
+                ),
+              GestureDetector(
+                onTap: () => _showAddMemberSheet(trip.id),
+                child: CircleAvatar(
+                  radius: 14,
+                  backgroundColor: Colors.grey[200],
+                  child: const Icon(Icons.add, size: 16, color: Colors.black54),
+                ),
+              ),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -248,15 +262,15 @@ class _TripDashboardState extends State<TripDashboard> {
       builder: (context) {
         String inputValue = '';
         bool isEmailTab = true;
-        
+
         return StatefulBuilder(
           builder: (context, setModalState) {
             return Padding(
               padding: EdgeInsets.only(
                 bottom: MediaQuery.of(context).viewInsets.bottom,
-                top: 20, 
-                left: 20, 
-                right: 20
+                top: 20,
+                left: 20,
+                right: 20,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -279,7 +293,7 @@ class _TripDashboardState extends State<TripDashboard> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Tabs
                   Row(
                     children: [
@@ -289,25 +303,32 @@ class _TripDashboardState extends State<TripDashboard> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
-                              color: isEmailTab ? Colors.blue : const Color(0xFFF2F4F7),
+                              color: isEmailTab
+                                  ? Colors.blue
+                                  : const Color(0xFFF2F4F7),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             alignment: Alignment.center,
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.email_outlined, 
-                                  size: 18, 
-                                  color: isEmailTab ? Colors.white : Colors.black54
+                                Icon(
+                                  Icons.email_outlined,
+                                  size: 18,
+                                  color: isEmailTab
+                                      ? Colors.white
+                                      : Colors.black54,
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
                                   'Email',
                                   style: TextStyle(
-                                    color: isEmailTab ? Colors.white : Colors.black54,
+                                    color: isEmailTab
+                                        ? Colors.white
+                                        : Colors.black54,
                                     fontWeight: FontWeight.w600,
                                   ),
-                                )
+                                ),
                               ],
                             ),
                           ),
@@ -320,25 +341,32 @@ class _TripDashboardState extends State<TripDashboard> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
-                              color: !isEmailTab ? Colors.blue : const Color(0xFFF2F4F7),
+                              color: !isEmailTab
+                                  ? Colors.blue
+                                  : const Color(0xFFF2F4F7),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             alignment: Alignment.center,
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.tag, 
-                                  size: 18, 
-                                  color: !isEmailTab ? Colors.white : Colors.black54
+                                Icon(
+                                  Icons.tag,
+                                  size: 18,
+                                  color: !isEmailTab
+                                      ? Colors.white
+                                      : Colors.black54,
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
                                   'User ID',
                                   style: TextStyle(
-                                    color: !isEmailTab ? Colors.white : Colors.black54,
+                                    color: !isEmailTab
+                                        ? Colors.white
+                                        : Colors.black54,
                                     fontWeight: FontWeight.w600,
                                   ),
-                                )
+                                ),
                               ],
                             ),
                           ),
@@ -346,15 +374,15 @@ class _TripDashboardState extends State<TripDashboard> {
                       ),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   TypeAheadField<User>(
                     debounceDuration: const Duration(milliseconds: 500),
                     textFieldConfiguration: TextFieldConfiguration(
                       decoration: InputDecoration(
-                        hintText: isEmailTab 
-                            ? 'Tìm theo email...' 
+                        hintText: isEmailTab
+                            ? 'Tìm theo email...'
                             : 'Nhập ID người dùng...',
                         prefixIcon: Icon(
                           isEmailTab ? Icons.email_outlined : Icons.search,
@@ -374,45 +402,60 @@ class _TripDashboardState extends State<TripDashboard> {
                     ),
                     suggestionsCallback: (pattern) async {
                       if (pattern.isEmpty) return [];
-                      final vm = Provider.of<TripViewModel>(context, listen: false);
+                      final vm = Provider.of<TripViewModel>(
+                        context,
+                        listen: false,
+                      );
                       return await vm.searchUsers(pattern);
                     },
                     itemBuilder: (context, User suggestion) {
                       return ListTile(
                         leading: CircleAvatar(
                           backgroundColor: Colors.blueAccent,
-                          child: Text(suggestion.username.isNotEmpty ? suggestion.username[0].toUpperCase() : 'U', style: TextStyle(color: Colors.white)),
+                          child: Text(
+                            suggestion.username.isNotEmpty
+                                ? suggestion.username[0].toUpperCase()
+                                : 'U',
+                            style: TextStyle(color: Colors.white),
+                          ),
                         ),
                         title: Text(suggestion.username),
                         subtitle: Text(suggestion.email),
                       );
                     },
                     onSuggestionSelected: (User suggestion) async {
-                       Navigator.pop(context); // Close sheet
-                       final vm = Provider.of<TripViewModel>(context, listen: false);
-                       // Add by User ID regardless of tab, as we have the specific user object
-                       final success = await vm.addMember(tripId, {'userId': suggestion.id.toString()});
-                       
-                        if (mounted) {
-                          if (success) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Đã thêm thành viên thành công!')),
-                            );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Thất bại: ${vm.error}')),
-                            );
-                          }
+                      Navigator.pop(context); // Close sheet
+                      final vm = Provider.of<TripViewModel>(
+                        context,
+                        listen: false,
+                      );
+                      // Add by User ID regardless of tab, as we have the specific user object
+                      final success = await vm.addMember(tripId, {
+                        'userId': suggestion.id.toString(),
+                      });
+
+                      if (mounted) {
+                        if (success) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Đã thêm thành viên thành công!'),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Thất bại: ${vm.error}')),
+                          );
                         }
+                      }
                     },
                     noItemsFoundBuilder: (context) => const Padding(
                       padding: EdgeInsets.all(8.0),
                       child: Text('Không tìm thấy người dùng'),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   const Center(
                     child: Text(
                       'Nhập để tìm kiếm và chọn người dùng',
@@ -423,7 +466,7 @@ class _TripDashboardState extends State<TripDashboard> {
                 ],
               ),
             );
-          }
+          },
         );
       },
     );
@@ -458,11 +501,13 @@ class _TripDashboardState extends State<TripDashboard> {
           Colors.blue,
           trip.itineraryCount,
           onTap: () {
-             // Navigate to Itinerary Screen
-             Navigator.push(
-               context,
-               MaterialPageRoute(builder: (_) => ItineraryScreen(tripId: trip.id)),
-             );
+            // Navigate to Itinerary Screen
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ItineraryScreen(tripId: trip.id),
+              ),
+            );
           },
         ),
         _buildGridItem(
@@ -488,80 +533,91 @@ class _TripDashboardState extends State<TripDashboard> {
 
           onTap: () {
             // Navigate to Checklist Screen
+            Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => ChecklistScreen(tripId: trip.id)),
+              MaterialPageRoute(
+                builder: (_) => ChecklistScreen(tripId: trip.id),
+              ),
             );
           },
-
         ),
+      ],
+    );
   }
 
-  Widget _buildGridItem(String title, IconData icon, Color bgColor, Color iconColor, int count, {VoidCallback? onTap}) {
+  Widget _buildGridItem(
+    String title,
+    IconData icon,
+    Color bgColor,
+    Color iconColor,
+    int count, {
+    VoidCallback? onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Stack(
-                  alignment: Alignment.topRight,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: bgColor.withOpacity(0.3),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(icon, color: iconColor, size: 30),
-                    ),
-                    if (count > 0)
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Stack(
+                    alignment: Alignment.topRight,
+                    children: [
                       Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: bgColor.withOpacity(0.3),
                           shape: BoxShape.circle,
                         ),
-                        child: Text(
-                          count.toString(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
+                        child: Icon(icon, color: iconColor, size: 30),
+                      ),
+                      if (count > 0)
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            count.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+                    ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
+    );
   }
 
   Widget _buildSyncedBadge() {
@@ -578,17 +634,14 @@ class _TripDashboardState extends State<TripDashboard> {
             width: 8,
             height: 8,
             decoration: const BoxDecoration(
-              color: Colors.white, 
+              color: Colors.white,
               shape: BoxShape.circle,
             ),
           ),
           const SizedBox(width: 8),
           const Text(
             "Synced",
-            style: TextStyle(
-              color: Colors.green,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
           ),
         ],
       ),
