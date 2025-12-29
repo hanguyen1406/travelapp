@@ -1,8 +1,17 @@
 package com.travelapp.model;
 
-import javax.persistence.*;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Date;
+
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.PreUpdate;
+import javax.persistence.Table;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "documents")
@@ -12,15 +21,14 @@ public class Document {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name;
+    private String name; // Document name (title)
+    private String category; // "Chuyến bay", "Khách sạn", "Bảo hiểm", "ID/Visa"
     private String originalFileName;
-
-    @Enumerated(EnumType.STRING)
-    private Type type;
-
-    private String url;
-    private String fileSize;
-    private Boolean offlineAvailable = false;
+    private String url; // File URL
+    private String fileSize; // File size in human readable format
+    private String type; // MIME type (e.g., "image/jpeg", "application/pdf")
+    private Boolean offlineAvailable = false; // Can be accessed offline
+    private Boolean isImportant = false;
 
     @ManyToOne
     @JoinColumn(name = "uploaded_by")
@@ -31,27 +39,28 @@ public class Document {
     @JsonIgnore
     private Trip trip;
 
-    public enum Type {
-        TICKET, HOTEL, TRAIN, PASSPORT, VISA, INSURANCE, OTHER
-    }
-
     private Date createdAt;
+    private Date updatedAt;
 
     public Document() {
         this.createdAt = new Date();
+        this.updatedAt = new Date();
+        this.offlineAvailable = false;
+        this.isImportant = false;
     }
 
+    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
+
     public String getOriginalFileName() { return originalFileName; }
     public void setOriginalFileName(String originalFileName) { this.originalFileName = originalFileName; }
-
-    public Type getType() { return type; }
-    public void setType(Type type) { this.type = type; }
 
     public String getUrl() { return url; }
     public void setUrl(String url) { this.url = url; }
@@ -59,8 +68,14 @@ public class Document {
     public String getFileSize() { return fileSize; }
     public void setFileSize(String fileSize) { this.fileSize = fileSize; }
 
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
+
     public Boolean getOfflineAvailable() { return offlineAvailable; }
     public void setOfflineAvailable(Boolean offlineAvailable) { this.offlineAvailable = offlineAvailable; }
+
+    public Boolean getIsImportant() { return isImportant; }
+    public void setIsImportant(Boolean isImportant) { this.isImportant = isImportant; }
 
     public User getUploadedBy() { return uploadedBy; }
     public void setUploadedBy(User uploadedBy) { this.uploadedBy = uploadedBy; }
@@ -70,4 +85,13 @@ public class Document {
 
     public Date getCreatedAt() { return createdAt; }
     public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
+
+    public Date getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = new Date();
+    }
 }
+

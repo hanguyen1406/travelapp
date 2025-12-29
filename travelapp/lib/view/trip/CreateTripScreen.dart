@@ -248,30 +248,33 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
               ),
               const SizedBox(height: 16),
               TypeAheadField<String>(
-                textFieldConfiguration: TextFieldConfiguration(
-                  controller: _destinationController,
-                  style: TextStyle(fontSize: 13),
-                  decoration: InputDecoration(
-                    labelText: 'Điểm đến',
-                    labelStyle: TextStyle(fontSize: 13),
-                    hintText: 'VD: Đà Lạt, Lâm Đồng',
-                    hintStyle: TextStyle(fontSize: 13),
-                    prefixIcon: Icon(Icons.location_on_outlined),
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
+                builder: (context, controller, focusNode) {
+                  return TextField(
+                    controller: controller,
+                    focusNode: focusNode,
+                    style: const TextStyle(fontSize: 13),
+                    decoration: InputDecoration(
+                      labelText: 'Điểm đến',
+                      labelStyle: const TextStyle(fontSize: 13),
+                      hintText: 'VD: Đà Lạt, Lâm Đồng',
+                      hintStyle: const TextStyle(fontSize: 13),
+                      prefixIcon: const Icon(Icons.location_on_outlined),
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                },
                 suggestionsCallback: fetchLocationSuggestions,
                 itemBuilder: (context, suggestion) {
                   return ListTile(
-                    title: Text(suggestion, style: TextStyle(fontSize: 13)),
+                    title: Text(suggestion, style: const TextStyle(fontSize: 13)),
                   );
                 },
-                onSuggestionSelected: (suggestion) {
+                onSelected: (suggestion) {
                   _destinationController.text = suggestion;
                 },
               ),
