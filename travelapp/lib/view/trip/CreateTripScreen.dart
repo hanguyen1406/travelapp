@@ -5,6 +5,9 @@ import 'package:provider/provider.dart';
 import 'package:travelapp/viewModel/trip_view_model.dart';
 import 'package:travelapp/viewModel/auth_view_model.dart';
 import 'package:travelapp/data/services/openmap_service.dart';
+import 'package:travelapp/data/services/image_search_service.dart';
+import 'package:travelapp/models/user_model.dart';
+import 'package:travelapp/models/trip_model.dart';
 
 class CreateTripScreen extends StatefulWidget {
   const CreateTripScreen({Key? key}) : super(key: key);
@@ -16,11 +19,11 @@ class CreateTripScreen extends StatefulWidget {
 class _CreateTripScreenState extends State<CreateTripScreen> {
   final _nameController = TextEditingController();
   final _destinationController = TextEditingController();
-  // Key moved to AppConfig: final String openMapApiKey = "EvckMG80oLeHRhw93ZjYiqztcBvApSEP";
   DateTime? _startDate;
   DateTime? _endDate;
-  List<Map<String, String>> members = [];
+  List<User> members = [];
   bool isLoading = false;
+  String? _coverImageUrl;
 
   @override
   void initState() {
@@ -34,35 +37,100 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
       }
 
       final user = authVM.loginResponse?.user;
-      if (user != null) {
+      if (user != null) { 
         setState(() {
-          members = [
-            {'name': user.username ?? '', 'email': user.email ?? '', 'role': 'Bạn'},
-          ];
-        });
-      } else {
-        // Fallback if still missing
-        setState(() {
-           members = [
-            {'name': 'Bạn', 'email': 'me@example.com', 'role': 'Bạn'},
-          ];
+             members.add(User(
+                 id: user.id ?? 0,
+                 name: user.name ?? '',
+                 surname: user.surname ?? '',
+                 username: user.username ?? '',
+                 email: user.email ?? '',
+             ));
         });
       }
     });
   }
 
+  Future<List<Map<String, String>>> fetchLocationSuggestions(String query) async {
+    return await OpenMapService().getLocationSuggestions(query);
+  }
+
+  Future<void> _fetchAndSetImage(String query) async {
+      final url = await ImageSearchService().fetchImageFromGoogle(query);
+      if (url != null && mounted) {
+          setState(() {
+              _coverImageUrl = url;
+          });
+      }
+  }
+
+  Future<void> _createTrip() async {
+    if (_nameController.text.isEmpty ||
+        _destinationController.text.isEmpty ||
+        _startDate == null ||
+        _endDate == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng nhập đầy đủ thông tin!')),
+      );
+      return;
+    }
+
+    final authVM = Provider.of<AuthViewModel>(context, listen: false);
+    final body = {
+      'tripName': _nameController.text,
+      'description': _destinationController.text,
+      'startDate': _startDate!.toIso8601String(),
+      'endDate': _endDate!.toIso8601String(),
+      'coverImage': _coverImageUrl ?? '', 
+      'createdBy': {'id': authVM.userId}, // Fixed: Send object instead of flat ID
+      // 'members': [], // Remove this, as we add members separately and it might confuse backend deserialization if not strictly typed
+      // 'memberCount': 1, // Optional, backend likely ignores or calculates this
+    };
+    
+    // setState(() => isLoading = true); 
+    
+    final vm = Provider.of<TripViewModel>(context, listen: false);
+    final Trip? newTrip = await vm.createTrip(body);
+
+    if (newTrip != null) {
+      for (var member in members) {
+          if (member.id != authVM.userId) { 
+              await vm.addMember(newTrip.id, {'userId': member.id.toString()});
+          }
+      }
+
+      if (!mounted) return;
+      Navigator.pop(context, true); 
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tạo chuyến đi thành công!')),
+      );
+    } else {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Tạo thất bại: ${vm.error}')),
+      );
+    }
+  }
+
   void _showAddMemberSheet() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
-        String search = '';
+        String inputValue = '';
+        bool isEmailTab = true;
         return StatefulBuilder(
           builder: (context, setModalState) {
             return Padding(
-              padding: const EdgeInsets.all(20),
+               padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                top: 20,
+                left: 20,
+                right: 20,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -83,98 +151,103 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
+                  
                   Row(
                     children: [
                       Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF2F4F7),
-                            borderRadius: BorderRadius.circular(12),
+                        child: GestureDetector(
+                          onTap: () => setModalState(() => isEmailTab = true),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: isEmailTab ? Colors.blue : const Color(0xFFF2F4F7),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            alignment: Alignment.center,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.email_outlined, size: 18, color: isEmailTab ? Colors.white : Colors.black54),
+                                const SizedBox(width: 8),
+                                Text('Email', style: TextStyle(color: isEmailTab ? Colors.white : Colors.black54, fontWeight: FontWeight.w600)),
+                              ],
+                            ),
                           ),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Row(
-                                  children: [
-                                    Icon(
-                                      Icons.email,
-                                      color: Colors.white,
-                                      size: 18,
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      'Email',
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.transparent,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Row(
-                                  children: [
-                                    Icon(
-                                      Icons.tag,
-                                      color: Colors.grey,
-                                      size: 18,
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      'User ID',
-                                      style: TextStyle(color: Colors.grey),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setModalState(() => isEmailTab = false),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: !isEmailTab ? Colors.blue : const Color(0xFFF2F4F7),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            alignment: Alignment.center,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.tag, size: 18, color: !isEmailTab ? Colors.white : Colors.black54),
+                                const SizedBox(width: 8),
+                                Text('User ID', style: TextStyle(color: !isEmailTab ? Colors.white : Colors.black54, fontWeight: FontWeight.w600)),
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Tìm theo email...',
-                      prefixIcon: Icon(Icons.search),
-                      filled: true,
-                      fillColor: Color(0xFFF2F4F7),
-                      contentPadding: EdgeInsets.symmetric(
-                        vertical: 0,
-                        horizontal: 16,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                    onChanged: (v) => setModalState(() => search = v),
-                  ),
                   const SizedBox(height: 24),
-                  Center(
-                    child: Text(
-                      'Nhập email để tìm kiếm',
-                      style: TextStyle(color: Colors.grey),
+
+                   TypeAheadField<User>(
+                    debounceDuration: const Duration(milliseconds: 500),
+                    builder: (context, controller, focusNode) {
+                      return TextField(
+                        controller: controller,
+                        focusNode: focusNode,
+                        decoration: InputDecoration(
+                          hintText: isEmailTab ? 'Tìm theo email...' : 'Nhập ID người dùng...',
+                          prefixIcon: Icon(isEmailTab ? Icons.email_outlined : Icons.search, color: Colors.grey),
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.blue)),
+                        ),
+                      );
+                    },
+                    suggestionsCallback: (pattern) async {
+                      if (pattern.isEmpty) return [];
+                      final vm = Provider.of<TripViewModel>(context, listen: false);
+                      return await vm.searchUsers(pattern);
+                    },
+                    itemBuilder: (context, User suggestion) {
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: Colors.blueAccent,
+                          child: Text(suggestion.username.isNotEmpty ? suggestion.username[0].toUpperCase() : 'U', style: TextStyle(color: Colors.white)),
+                        ),
+                        title: Text(suggestion.username),
+                        subtitle: Text(suggestion.email),
+                      );
+                    },
+                    onSelected: (User suggestion) {
+                      if (!members.any((m) => m.id == suggestion.id)) {
+                          setState(() {
+                              members.add(suggestion);
+                          });
+                      }
+                      Navigator.pop(context);
+                    },
+                    emptyBuilder: (context) => const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Text('Không tìm thấy người dùng'),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 250),
                 ],
               ),
             );
@@ -182,54 +255,6 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
         );
       },
     );
-  }
-
-  Future<void> _createTrip() async {
-    if (_nameController.text.isEmpty ||
-        _destinationController.text.isEmpty ||
-        _startDate == null ||
-        _endDate == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập đầy đủ thông tin!')),
-      );
-      return;
-    }
-    
-    // Member parsing logic if needed? 
-    // Currently sending members as empty list in body, which is fine for now based on previous code.
-    
-    final body = {
-      'tripName': _nameController.text,
-      'description': _destinationController.text,
-      'startDate': _startDate!.toIso8601String(),
-      'endDate': _endDate!.toIso8601String(),
-      'coverImage': '',
-      'members': [], // Logic to add actual members can be added here
-      'memberCount': members.length,
-      'createdById': 1, // Mock or retrieve from Auth
-    };
-    
-    // setState(() => isLoading = true); // Optional if using VM loading
-    
-    final vm = Provider.of<TripViewModel>(context, listen: false);
-    final success = await vm.createTrip(body);
-
-    if (success) {
-      if (!mounted) return;
-      Navigator.pop(context, true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Tạo chuyến đi thành công!')),
-      );
-    } else {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Tạo thất bại: ${vm.error}')),
-      );
-    }
-  }
-
-  Future<List<Map<String, String>>> fetchLocationSuggestions(String query) async {
-    return await OpenMapService().getLocationSuggestions(query);
   }
 
   @override
@@ -304,9 +329,74 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                   );
                 },
                 onSelected: (suggestion) {
-                  _destinationController.text = suggestion['name']!;
+                   _destinationController.text = suggestion['name']!;
+                   _fetchAndSetImage(suggestion['name']!);
                 },
               ),
+              if (_coverImageUrl != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16.0),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      _coverImageUrl!,
+                      height: 150,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        height: 150, 
+                        color: Colors.grey[200], 
+                        child: Center(child: Icon(Icons.broken_image, color: Colors.grey))
+                      ),
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 20),
+              
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Thành viên (${members.length})',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                  TextButton(
+                    onPressed: _showAddMemberSheet,
+                    child: const Text('+ Thêm'),
+                  ),
+                ],
+              ),
+               
+               if (members.isNotEmpty)
+                Column(
+                    children: members.map<Widget>((User m) => Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                            children: [
+                                CircleAvatar(
+                                    backgroundColor: Colors.blue,
+                                    child: Text(m.username.isNotEmpty ? m.username[0].toUpperCase() : 'U', style: TextStyle(color: Colors.white)),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                    child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                            Text(m.username, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                            Text(m.email, style: TextStyle(color: Colors.grey, fontSize: 11)),
+                                        ],
+                                    ),
+                                ),
+                            ],
+                        ),
+                    )).toList(),
+                ),
+
               const SizedBox(height: 16),
               Row(
                 children: [
@@ -384,81 +474,6 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Thành viên (${members.length})',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                  ),
-                  TextButton(
-                    onPressed: _showAddMemberSheet,
-                    child: const Text('+ Thêm'),
-                  ),
-                ],
-              ),
-              ...members.map(
-                (m) => Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        backgroundColor: Colors.blue,
-                        child: Text(
-                          m['name']![0].toUpperCase(),
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              m['name']!,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                              ),
-                            ),
-                            Text(
-                              m['email']!,
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (m['role'] == 'Bạn')
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Text(
-                            'Bạn',
-                            style: TextStyle(color: Colors.blue, fontSize: 11),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
               ),
               const SizedBox(height: 32),
               SizedBox(
