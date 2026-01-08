@@ -5,6 +5,7 @@ import 'package:travelapp/viewModel/trip_view_model.dart';
 import 'package:travelapp/models/trip_model.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:travelapp/data/services/openmap_service.dart';
+import 'package:travelapp/data/services/image_search_service.dart'; // Added
 import 'package:intl/intl.dart';
 
 class SuggestActivity extends StatefulWidget {
@@ -21,6 +22,16 @@ class _SuggestActivityState extends State<SuggestActivity> {
   final _descriptionController = TextEditingController();
   TimeOfDay _selectedTime = TimeOfDay(hour: 8, minute: 0);
   int _dayNumber = 1;
+  String? _coverImageUrl; // State for image
+
+  Future<void> _fetchAndSetImage(String query) async {
+      final url = await ImageSearchService().fetchImageFromGoogle(query);
+      if (url != null && mounted) {
+          setState(() {
+              _coverImageUrl = url;
+          });
+      }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,8 +106,29 @@ class _SuggestActivityState extends State<SuggestActivity> {
               onSelected: (suggestion) {
                 final map = suggestion as Map<String, String>;
                 _locationController.text = map['name']!;
+                _fetchAndSetImage(map['name']!); // Fetch here
               },
             ),
+            
+            if (_coverImageUrl != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    _coverImageUrl!,
+                    height: 150,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                        height: 150, 
+                        color: Colors.grey[200], 
+                        child: Center(child: Icon(Icons.broken_image, color: Colors.grey))
+                    ),
+                  ),
+                ),
+              ),
+
              const SizedBox(height: 20),
              
             _buildLabel("Mô tả (tùy chọn)"),
@@ -125,8 +157,9 @@ class _SuggestActivityState extends State<SuggestActivity> {
                       'locationName': _locationController.text,
                       'dayNumber': _dayNumber,
                       'tripId': widget.tripId,
-                      'status': 'PENDING', // Default to pending/voting
-                      'suggestedById': 1 // Mock user ID or from Provider
+                      'status': 'PENDING', 
+                      'suggestedById': 1,
+                      'imageUrl': _coverImageUrl ?? '' // Included here (if backend supports it, otherwise ignored)
                     };
                     
                     // Call ViewModel

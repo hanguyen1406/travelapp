@@ -40,15 +40,15 @@ class TripViewModel extends ChangeNotifier {
     }
   }
 
-  Future<bool> createTrip(Map<String, dynamic> data) async {
+  Future<Trip?> createTrip(Map<String, dynamic> data) async {
     _setLoading(true);
     _error = null;
     try {
-      await _tripRepository.createTrip(data);
-      return true;
+      Trip newTrip = await _tripRepository.createTrip(data);
+      return newTrip;
     } catch (e) {
       _error = e.toString();
-      return false;
+      return null;
     } finally {
       _setLoading(false);
     }

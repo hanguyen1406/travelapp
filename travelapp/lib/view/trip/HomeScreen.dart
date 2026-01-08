@@ -87,11 +87,18 @@ class _HomeScreenState extends State<HomeScreen> {
                         bottom: 24,
                         right: 24,
                         child: FloatingActionButton(
-                          onPressed: () {
-                             Navigator.push(
+                          onPressed: () async {
+                           final result = await Navigator.push(
                                context,
                                MaterialPageRoute(builder: (context) => const CreateTripScreen()),
                              );
+                             
+                             if (result == true && mounted) {
+                               final authVM = Provider.of<AuthViewModel>(context, listen: false);
+                               if (authVM.userId != null) {
+                                 Provider.of<TripViewModel>(context, listen: false).fetchTrips(authVM.userId!);
+                               }
+                             }
                           },
                           backgroundColor: Colors.blue,
                           shape: const CircleBorder(),
