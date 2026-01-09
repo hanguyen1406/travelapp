@@ -86,5 +86,18 @@ class TripRepository {
       return [];
     }
   }
+  Future<bool> deleteTrip(int id) async {
+    try {
+      final token = await _getToken();
+      if (token == null) {
+        throw Exception('No authentication token found');
+      }
+      
+      await _apiServices.getDeleteApiResponseWithToken('$_tripsUrl/$id', token);
+      return true;
+    } catch (e) {
+      rethrow;
+    }
+  }
 }
 

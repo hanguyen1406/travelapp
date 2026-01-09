@@ -124,4 +124,11 @@ public class TripService {
         // Do not return password
         return dto;
     }
+
+    public void deleteTrip(Long id) {
+        if (!tripRepository.existsById(id)) {
+            throw new RuntimeException("Trip not found");
+        }
+        tripRepository.deleteById(id);
+    }
 }

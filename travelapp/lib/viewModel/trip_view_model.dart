@@ -10,11 +10,13 @@ class TripViewModel extends ChangeNotifier {
   Trip? _currentTrip;
   bool _isLoading = false;
   String? _error;
+  String? _detailError;
 
   List<Trip> get trips => _trips;
   Trip? get currentTrip => _currentTrip;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  String? get detailError => _detailError;
 
   Future<void> fetchTrips(int userId) async {
     _setLoading(true);
@@ -30,11 +32,12 @@ class TripViewModel extends ChangeNotifier {
 
   Future<void> fetchTripDetail(int id) async {
     _setLoading(true);
-    _error = null;
+    _detailError = null;
     try {
       _currentTrip = await _tripRepository.getTripDetail(id);
     } catch (e) {
-      _error = e.toString();
+      _detailError = e.toString();
+      // Ensure we don't pollute the main list error
     } finally {
       _setLoading(false);
     }
@@ -73,6 +76,20 @@ class TripViewModel extends ChangeNotifier {
       return await _tripRepository.searchUsers(query);
     } catch (e) {
       return [];
+    }
+  }
+
+  Future<bool> deleteTrip(int id) async {
+    _setLoading(true);
+    _error = null;
+    try {
+      await _tripRepository.deleteTrip(id);
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      return false;
+    } finally {
+      _setLoading(false);
     }
   }
 
