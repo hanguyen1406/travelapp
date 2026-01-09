@@ -16,6 +16,23 @@ public class TripService {
     private com.travelapp.repository.UserRepository userRepository;
 
     public Trip saveTrip(Trip trip) {
+        if (trip.getCreatedBy() != null && trip.getCreatedBy().getId() != null) {
+            com.travelapp.model.User creator = userRepository.findById(trip.getCreatedBy().getId())
+                    .orElseThrow(() -> new RuntimeException("Creator not found"));
+
+            if (trip.getMembers() == null) {
+                trip.setMembers(new java.util.ArrayList<>());
+            }
+
+            // Check if creator is already in the list (using equals/hashCode ideally, or ID
+            // check)
+            boolean exists = trip.getMembers().stream()
+                    .anyMatch(m -> m.getId().equals(creator.getId()));
+
+            if (!exists) {
+                trip.getMembers().add(creator);
+            }
+        }
         return tripRepository.save(trip);
     }
 

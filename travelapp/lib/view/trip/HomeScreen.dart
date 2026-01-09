@@ -62,13 +62,23 @@ class _HomeScreenState extends State<HomeScreen> {
                             return const SizedBox(height: 80);
                           final trip = viewModel.trips[index];
                           return GestureDetector(
-                            onTap: () {
-                              Navigator.push(
+                            onTap: () async {
+                              print("DEBUG: Navigating to TripDashboard for trip ${trip.id}");
+                              final result = await Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => TripDashboard(tripId: trip.id),
                                 ),
                               );
+                              print("DEBUG: Returned from TripDashboard with result: $result");
+                              if (mounted) {
+                                final authVM = Provider.of<AuthViewModel>(context, listen: false);
+                                print("DEBUG: Auth user ID: ${authVM.userId}");
+                                if (authVM.userId != null) {
+                                  print("DEBUG: Calling fetchTrips");
+                                  Provider.of<TripViewModel>(context, listen: false).fetchTrips(authVM.userId!);
+                                }
+                              }
                             },
                             child: _TripCard(
                               imageUrl: trip.coverImage.isNotEmpty 
