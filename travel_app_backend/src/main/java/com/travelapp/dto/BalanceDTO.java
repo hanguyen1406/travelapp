@@ -1,11 +1,19 @@
 package com.travelapp.dto;
 
+import java.util.List;
+import java.util.Map;
+
 public class BalanceDTO {
     private Long userId;
     private String userName;
     private Double totalPaid;
     private Double totalOwed;
     private Double balance; // positive = người khác nợ, negative = nợ người khác
+    private Long tripId;
+    private Double userBalance;
+    private Double totalToReceive;
+    private List<SettlementDTO> settlements;
+    private Map<Long, Double> allUserBalances;
 
     public BalanceDTO() {}
 
@@ -31,4 +39,19 @@ public class BalanceDTO {
 
     public Double getBalance() { return balance; }
     public void setBalance(Double balance) { this.balance = balance; }
+
+    public Long getTripId() { return tripId; }
+    public void setTripId(Long tripId) { this.tripId = tripId; }
+
+    public Double getUserBalance() { return userBalance; }
+    public void setUserBalance(Double userBalance) { this.userBalance = userBalance; }
+
+    public Double getTotalToReceive() { return totalToReceive; }
+    public void setTotalToReceive(Double totalToReceive) { this.totalToReceive = totalToReceive; }
+
+    public List<SettlementDTO> getSettlements() { return settlements; }
+    public void setSettlements(List<SettlementDTO> settlements) { this.settlements = settlements; }
+
+    public Map<Long, Double> getAllUserBalances() { return allUserBalances; }
+    public void setAllUserBalances(Map<Long, Double> allUserBalances) { this.allUserBalances = allUserBalances; }
 }

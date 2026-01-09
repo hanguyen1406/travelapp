@@ -22,7 +22,7 @@ class ExpenseRepository {
     try {
       final url = Uri.parse('$baseUrl/expenses/trip/$tripId');
       final headers = await _getAuthHeaders();
-      
+
       final response = await http.get(url, headers: headers);
       print('📊 [Expenses] GET $url - Status: ${response.statusCode}');
 
@@ -39,9 +39,14 @@ class ExpenseRepository {
   }
 
   // Get expenses by category
-  static Future<List<Expense>> getExpensesByCategory(int tripId, String category) async {
+  static Future<List<Expense>> getExpensesByCategory(
+    int tripId,
+    String category,
+  ) async {
     try {
-      final url = Uri.parse('$baseUrl/expenses/category?tripId=$tripId&category=$category');
+      final url = Uri.parse(
+        '$baseUrl/expenses/category?tripId=$tripId&category=$category',
+      );
       final headers = await _getAuthHeaders();
 
       final response = await http.get(url, headers: headers);
@@ -49,7 +54,9 @@ class ExpenseRepository {
         final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
         return data.map((e) => Expense.fromJson(e)).toList();
       } else {
-        throw Exception('Failed to load expenses category: ${response.statusCode}');
+        throw Exception(
+          'Failed to load expenses category: ${response.statusCode}',
+        );
       }
     } catch (e) {
       print('❌ [Expenses] Error fetching expenses by category: $e');
@@ -70,7 +77,9 @@ class ExpenseRepository {
       if (response.statusCode == 200 || response.statusCode == 201) {
         return Expense.fromJson(json.decode(utf8.decode(response.bodyBytes)));
       } else {
-        throw Exception('Failed to create expense: ${response.statusCode} - ${response.body}');
+        throw Exception(
+          'Failed to create expense: ${response.statusCode} - ${response.body}',
+        );
       }
     } catch (e) {
       print('❌ [Expenses] Error creating expense: $e');
@@ -90,6 +99,27 @@ class ExpenseRepository {
       }
     } catch (e) {
       print('❌ [Expenses] Error deleting expense: $e');
+      throw e;
+    }
+  }
+
+  // Get balance for a user in a trip
+  static Future<Map<String, dynamic>> getBalance(int tripId, int userId) async {
+    try {
+      final url = Uri.parse('$baseUrl/balance/trip/$tripId/user/$userId');
+      final headers = await _getAuthHeaders();
+
+      final response = await http.get(url, headers: headers);
+      print('💰 [Balance] GET $url - Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        return json.decode(utf8.decode(response.bodyBytes))
+            as Map<String, dynamic>;
+      } else {
+        throw Exception('Failed to load balance: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ [Balance] Error fetching balance: $e');
       throw e;
     }
   }
