@@ -200,9 +200,9 @@ public class UserController {
 			User foundUser = user.get();
 			// Format join date
 			String joinDate = "Tham gia từ tháng 1 năm 2024";
-			if (foundUser.getDateOfBirth() != null) {
+			if (foundUser.getCreatedAt() != null) {
 				SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-				joinDate = "Tham gia từ: " + sdf.format(foundUser.getDateOfBirth());
+				joinDate = "Tham gia từ: " + sdf.format(foundUser.getCreatedAt());
 			}
 
 			// Get statistics from trips (assuming trips have userId and status)

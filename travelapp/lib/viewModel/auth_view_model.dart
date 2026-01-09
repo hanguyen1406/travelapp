@@ -193,8 +193,12 @@ class AuthViewModel extends ChangeNotifier {
 
   Future<User?> fetchUserDetails(int id) async {
     try {
-      final response = await _apiService.getGetApiResponse(
-        '${AppConfig.baseUrl}/api/users/id/$id',
+      if (_token == null) {
+        throw Exception('No authentication token found');
+      }
+      final response = await _apiService.getGetApiResponseWithToken(
+        '${AppConfig.baseUrl}/users/id/$id',
+        _token!,
       );
       
       // Parse User from response
@@ -247,8 +251,9 @@ class AuthViewModel extends ChangeNotifier {
         throw Exception('Username not found');
       }
 
-      final response = await _apiService.getGetApiResponse(
-        '${AppConfig.baseUrl}/api/users/profile/${_loginResponse!.user!.username}',
+      final response = await _apiService.getGetApiResponseWithToken(
+        '${AppConfig.baseUrl}/users/profile/${_loginResponse!.user!.username}',
+        _token!,
       );
 
       return UserProfile.fromJson(response);
