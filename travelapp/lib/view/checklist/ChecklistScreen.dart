@@ -95,7 +95,7 @@ class _ChecklistScreenState extends State<ChecklistScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Tiến độ dự dự chuyến',
+                                      'Danh sách đồ đạc',
                                       style: TextStyle(
                                         color: Colors.white70,
                                         fontSize: 12,
@@ -103,7 +103,7 @@ class _ChecklistScreenState extends State<ChecklistScreen> {
                                     ),
                                     SizedBox(height: 8),
                                     Text(
-                                      'Dự dự chuyến để',
+                                      'Danh sách đồ đạc',
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontSize: 16,
@@ -254,7 +254,7 @@ class _ChecklistScreenState extends State<ChecklistScreen> {
                         Icon(Icons.add, color: Colors.white),
                         SizedBox(width: 8),
                         Text(
-                          'Thêm dự dự',
+                          'Thêm đồ đạc',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 16,
