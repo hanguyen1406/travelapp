@@ -236,29 +236,32 @@ class _DocumentVaultScreenState extends State<DocumentVaultScreen> {
   Widget _buildCategoryTabs() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: categories.map((category) {
-          final isSelected = selectedCategory == category;
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: FilterChip(
-              onSelected: (value) => _onCategoryChanged(category),
-              label: Text(
-                category,
-                style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.grey[700],
-                  fontWeight: FontWeight.w500,
-                  fontSize: 13,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: categories.map((category) {
+            final isSelected = selectedCategory == category;
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: FilterChip(
+                onSelected: (value) => _onCategoryChanged(category),
+                label: Text(
+                  category,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : Colors.grey[700],
+                    fontWeight: FontWeight.w500,
+                    fontSize: 13,
+                  ),
                 ),
+                backgroundColor: isSelected
+                    ? const Color(0xFF0066FF)
+                    : Colors.grey[200],
+                side: BorderSide.none,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
-              backgroundColor: isSelected
-                  ? const Color(0xFF0066FF)
-                  : Colors.grey[200],
-              side: BorderSide.none,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            ),
-          );
-        }).toList(),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
