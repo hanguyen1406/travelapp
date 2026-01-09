@@ -18,21 +18,38 @@ class BalanceSettlementScreen extends StatefulWidget {
       _BalanceSettlementScreenState();
 }
 
-class _BalanceSettlementScreenState extends State<BalanceSettlementScreen> {
+class _BalanceSettlementScreenState extends State<BalanceSettlementScreen>
+    with WidgetsBindingObserver {
   bool isLoading = true;
+  bool dataLoaded = false; // Track if data has been loaded
   double userBalance = 0;
   double totalDebt = 0;
   double totalPayment = 0; // Amount others owe me
 
   List<Settlement> settlements = [];
-  Map<String, bool> settledStatus = {}; // TODO: Persist this if needed, for now local
+  Map<String, bool> settledStatus =
+      {}; // TODO: Persist this if needed, for now local
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadData();
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadData();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -40,42 +57,64 @@ class _BalanceSettlementScreenState extends State<BalanceSettlementScreen> {
     try {
       final authVM = Provider.of<AuthViewModel>(context, listen: false);
       final tripVM = Provider.of<TripViewModel>(context, listen: false);
-      
+
       final currentUserId = authVM.userId;
       if (currentUserId == null) {
-          // Fallback or error
-          setState(() => isLoading = false);
-          return;
+        // Fallback or error
+        setState(() => isLoading = false);
+        return;
       }
 
       // Ensure we have members mapping
       Map<int, User> membersMap = {};
-      if (tripVM.currentTrip != null && tripVM.currentTrip!.id == widget.tripId) {
-          for (var m in tripVM.currentTrip!.members) {
-              membersMap[m.id] = m;
-          }
+      if (tripVM.currentTrip != null &&
+          tripVM.currentTrip!.id == widget.tripId) {
+        for (var m in tripVM.currentTrip!.members) {
+          membersMap[m.id] = m;
+        }
       } else {
-          // Fetch trip if not current
-          await tripVM.fetchTripDetail(widget.tripId);
-          if (tripVM.currentTrip != null) {
-              for (var m in tripVM.currentTrip!.members) {
-                  membersMap[m.id] = m;
-              }
+        // Fetch trip if not current
+        await tripVM.fetchTripDetail(widget.tripId);
+        if (tripVM.currentTrip != null) {
+          for (var m in tripVM.currentTrip!.members) {
+            membersMap[m.id] = m;
           }
+        }
       }
 
-      // Fetch expenses
-      final expenses = await ExpenseRepository.getExpenses(widget.tripId);
-      print('🔍 [BalanceSu] Fetched ${expenses.length} expenses');
-      for (var e in expenses) {
-          print('  - Exp ${e.id}: ${e.amount} paid by ${e.paidById}. Splits: ${e.splits.length}');
+      // Try to load from API first (better accuracy)
+      try {
+        final balanceData = await ExpenseRepository.getBalance(
+          widget.tripId,
+          currentUserId,
+        );
+        print('✅ [BalanceSu] Loaded balance from API');
+
+        // Parse balance data
+        _loadBalanceFromAPI(balanceData, membersMap, currentUserId);
+        setState(() => dataLoaded = true);
+      } catch (apiError) {
+        print(
+          '⚠️ [BalanceSu] API call failed, falling back to local calculation: $apiError',
+        );
+
+        // Fallback: Fetch expenses and calculate locally
+        final expenses = await ExpenseRepository.getExpenses(widget.tripId);
+        print('🔍 [BalanceSu] Fetched ${expenses.length} expenses');
+        for (var e in expenses) {
+          print(
+            '  - Exp ${e.id}: ${e.amount} paid by ${e.paidById}. Splits: ${e.splits.length}',
+          );
           for (var s in e.splits) {
-              print('    - Split to ${s.userId}: ${s.shareAmount}');
+            print('    - Split to ${s.userId}: ${s.shareAmount}');
           }
-      }
-      
-      _calculateBalances(expenses, currentUserId, membersMap);
+        }
 
+        _calculateBalances(expenses, currentUserId, membersMap);
+        setState(() => dataLoaded = true);
+
+        _calculateBalances(expenses, currentUserId, membersMap);
+      }
     } catch (e) {
       print('Error loading balance data: $e');
     } finally {
@@ -85,114 +124,206 @@ class _BalanceSettlementScreenState extends State<BalanceSettlementScreen> {
     }
   }
 
-  void _calculateBalances(List<Expense> expenses, int myId, Map<int, User> members) {
-      print('🧮 [_calculateBalances] MyId: $myId. Members: ${members.keys.toList()}');
+  void _loadBalanceFromAPI(
+    Map<String, dynamic> balanceData,
+    Map<int, User> membersMap,
+    int myId,
+  ) {
+    if (!mounted) return;
 
-      // 1. Calculate Net Balances
-      Map<int, double> balances = {};
-      
-      // Initialize 0 for all known members (important for graph)
-      members.keys.forEach((id) => balances[id] = 0.0);
-
-      for (var expense in expenses) {
-          // Payer paid (+)
-          balances[expense.paidById] = (balances[expense.paidById] ?? 0) + expense.amount;
-          
-          // Splitters consume (-)
-          for (var split in expense.splits) {
-             balances[split.userId] = (balances[split.userId] ?? 0) - split.shareAmount;
-          }
-      }
-      
-      print('  -> Raw Balances: $balances');
-
-      // 2. Simplify Debts (Greedy Algorithm)
-      List<_Debt> debts = [];
-      List<int> debtors = balances.keys.where((k) => (balances[k] ?? 0) < -1).toList(); // Tolerance 1
-      List<int> creditors = balances.keys.where((k) => (balances[k] ?? 0) > 1).toList();
-      
-      print('  -> Debtors: $debtors');
-      print('  -> Creditors: $creditors');
-      
-      // Sort by magnitude to optimize matching (optional, but good practice)
-      debtors.sort((a, b) => balances[a]!.compareTo(balances[b]!)); // Ascending (most negative first)
-      creditors.sort((a, b) => balances[b]!.compareTo(balances[a]!)); // Descending (most positive first)
-
-      int i = 0; // debtor index
-      int j = 0; // creditor index
-
-      while (i < debtors.length && j < creditors.length) {
-          int debtorId = debtors[i];
-          int creditorId = creditors[j];
-          
-          double debtAmount = -(balances[debtorId]!);
-          double creditAmount = balances[creditorId]!;
-          
-          double settlementAmount = debtAmount < creditAmount ? debtAmount : creditAmount;
-          
-          if (settlementAmount > 1) { // Filter tiny amounts
-             debts.add(_Debt(debtorId, creditorId, settlementAmount));
-          }
-
-          balances[debtorId] = (balances[debtorId]! + settlementAmount);
-          balances[creditorId] = (balances[creditorId]! - settlementAmount);
-
-          if (balances[debtorId]!.abs() < 1) i++;
-          if (balances[creditorId]!.abs() < 1) j++;
-      }
-
-      // 3. Filter for My View
+    try {
       settlements = [];
-      double myNetBalance = balances[myId] ?? 0; // This is remaining AFTER simplification? No, logic above modifies 'balances' map as it goes. 
-      // Wait, I need the ORIGINAL net balance for the top card "Net Status".
-      // The simplification loop destroys the balances map to 0.
-      // So I should calculate totals first.
-      
-      // Re-re-calculate simpler stats
-      userBalance = 0;
-      totalDebt = 0;
-      totalPayment = 0;
-      
-      // Recalulate correct "User Balance" logic:
-      // User Balance = (Total Paid) - (Fair Share). 
-      // This is exactly what I calculated in step 1 before muting it. 
-      // I should have saved Step 1 state. 
-      // However, after simplification, 'debts' list contains all I need.
-      
-      for (var debt in debts) {
-          String fromName = members[debt.from]?.name ?? 'User ${debt.from}';
-          String toName = members[debt.to]?.name ?? 'User ${debt.to}';
-          String fromAvatar = fromName.isNotEmpty ? fromName[0] : '?';
-          String toAvatar = toName.isNotEmpty ? toName[0] : '?';
-          
-          if (debt.from == myId) {
-             // I owe someone
-             totalDebt += debt.amount;
-             settlements.add(Settlement(
-                 id: settlements.length,
-                 from: 'Bạn', 
-                 to: toName, 
-                 amount: debt.amount, 
-                 status: SettlementStatus.pending, 
-                 fromAvatar: 'You', 
-                 toAvatar: toAvatar
-             ));
-          } else if (debt.to == myId) {
-             // Someone owes me
-             totalPayment += debt.amount;
-             settlements.add(Settlement(
-                 id: settlements.length,
-                 from: fromName, 
-                 to: 'Bạn',
-                 amount: debt.amount, 
-                 status: SettlementStatus.pending, 
-                 fromAvatar: fromAvatar, 
-                 toAvatar: 'You'
-             ));
-          }
+
+      // Get user balance
+      userBalance = (balanceData['userBalance'] ?? 0).toDouble();
+      totalDebt = (balanceData['totalOwed'] ?? 0).toDouble();
+      totalPayment = (balanceData['totalToReceive'] ?? 0).toDouble();
+
+      print(
+        '💰 [BalanceSu API] Balance: $userBalance, Debt: $totalDebt, Payment: $totalPayment',
+      );
+
+      print('📊 [BalanceSu API] Full response: $balanceData');
+
+      // Parse settlements from API
+      final List<dynamic> settlementsList = balanceData['settlements'] ?? [];
+      print('📋 [BalanceSu API] Settlements count: ${settlementsList.length}');
+
+      for (var settleData in settlementsList) {
+        final fromUserId = (settleData['fromUserId'] ?? 0).toInt();
+        final toUserId = (settleData['toUserId'] ?? 0).toInt();
+        final amount = (settleData['amount'] ?? 0).toDouble();
+        final fromUserName = settleData['fromUserName'] ?? 'User $fromUserId';
+        final toUserName = settleData['toUserName'] ?? 'User $toUserId';
+
+        String fromDisplay = fromUserId == myId ? 'Bạn' : fromUserName;
+        String toDisplay = toUserId == myId ? 'Bạn' : toUserName;
+        String fromAvatar = fromUserId == myId
+            ? 'You'
+            : (fromUserName.isNotEmpty ? fromUserName[0] : '?');
+        String toAvatar = toUserId == myId
+            ? 'You'
+            : (toUserName.isNotEmpty ? toUserName[0] : '?');
+
+        print(
+          '➕ [BalanceSu API] Adding settlement: $fromDisplay -> $toDisplay: $amount',
+        );
+
+        settlements.add(
+          Settlement(
+            id: settlements.length,
+            from: fromDisplay,
+            to: toDisplay,
+            amount: amount,
+            status: SettlementStatus.pending,
+            fromAvatar: fromAvatar,
+            toAvatar: toAvatar,
+          ),
+        );
       }
-      
-      userBalance = totalPayment - totalDebt;
+
+      print('✅ [BalanceSu API] Parsed settlements: ${settlements.length}');
+      setState(() {});
+    } catch (e) {
+      print('❌ [BalanceSu] Error parsing API response: $e');
+      print('🔍 [BalanceSu] Raw data: $balanceData');
+      rethrow;
+    }
+  }
+
+  void _calculateBalances(
+    List<Expense> expenses,
+    int myId,
+    Map<int, User> members,
+  ) {
+    print(
+      '🧮 [_calculateBalances] MyId: $myId. Members: ${members.keys.toList()}',
+    );
+
+    // 1. Calculate Net Balances
+    Map<int, double> balances = {};
+
+    // Initialize 0 for all known members (important for graph)
+    members.keys.forEach((id) => balances[id] = 0.0);
+
+    for (var expense in expenses) {
+      // Payer paid (+)
+      balances[expense.paidById] =
+          (balances[expense.paidById] ?? 0) + expense.amount;
+
+      // Splitters consume (-)
+      for (var split in expense.splits) {
+        balances[split.userId] =
+            (balances[split.userId] ?? 0) - split.shareAmount;
+      }
+    }
+
+    print('  -> Raw Balances: $balances');
+
+    // 2. Simplify Debts (Greedy Algorithm)
+    List<_Debt> debts = [];
+    List<int> debtors = balances.keys
+        .where((k) => (balances[k] ?? 0) < -1)
+        .toList(); // Tolerance 1
+    List<int> creditors = balances.keys
+        .where((k) => (balances[k] ?? 0) > 1)
+        .toList();
+
+    print('  -> Debtors: $debtors');
+    print('  -> Creditors: $creditors');
+
+    // Sort by magnitude to optimize matching (optional, but good practice)
+    debtors.sort(
+      (a, b) => balances[a]!.compareTo(balances[b]!),
+    ); // Ascending (most negative first)
+    creditors.sort(
+      (a, b) => balances[b]!.compareTo(balances[a]!),
+    ); // Descending (most positive first)
+
+    int i = 0; // debtor index
+    int j = 0; // creditor index
+
+    while (i < debtors.length && j < creditors.length) {
+      int debtorId = debtors[i];
+      int creditorId = creditors[j];
+
+      double debtAmount = -(balances[debtorId]!);
+      double creditAmount = balances[creditorId]!;
+
+      double settlementAmount = debtAmount < creditAmount
+          ? debtAmount
+          : creditAmount;
+
+      if (settlementAmount > 1) {
+        // Filter tiny amounts
+        debts.add(_Debt(debtorId, creditorId, settlementAmount));
+      }
+
+      balances[debtorId] = (balances[debtorId]! + settlementAmount);
+      balances[creditorId] = (balances[creditorId]! - settlementAmount);
+
+      if (balances[debtorId]!.abs() < 1) i++;
+      if (balances[creditorId]!.abs() < 1) j++;
+    }
+
+    // 3. Filter for My View
+    settlements = [];
+    double myNetBalance =
+        balances[myId] ??
+        0; // This is remaining AFTER simplification? No, logic above modifies 'balances' map as it goes.
+    // Wait, I need the ORIGINAL net balance for the top card "Net Status".
+    // The simplification loop destroys the balances map to 0.
+    // So I should calculate totals first.
+
+    // Re-re-calculate simpler stats
+    userBalance = 0;
+    totalDebt = 0;
+    totalPayment = 0;
+
+    // Recalulate correct "User Balance" logic:
+    // User Balance = (Total Paid) - (Fair Share).
+    // This is exactly what I calculated in step 1 before muting it.
+    // I should have saved Step 1 state.
+    // However, after simplification, 'debts' list contains all I need.
+
+    for (var debt in debts) {
+      String fromName = members[debt.from]?.name ?? 'User ${debt.from}';
+      String toName = members[debt.to]?.name ?? 'User ${debt.to}';
+      String fromAvatar = fromName.isNotEmpty ? fromName[0] : '?';
+      String toAvatar = toName.isNotEmpty ? toName[0] : '?';
+
+      if (debt.from == myId) {
+        // I owe someone
+        totalDebt += debt.amount;
+        settlements.add(
+          Settlement(
+            id: settlements.length,
+            from: 'Bạn',
+            to: toName,
+            amount: debt.amount,
+            status: SettlementStatus.pending,
+            fromAvatar: 'You',
+            toAvatar: toAvatar,
+          ),
+        );
+      } else if (debt.to == myId) {
+        // Someone owes me
+        totalPayment += debt.amount;
+        settlements.add(
+          Settlement(
+            id: settlements.length,
+            from: fromName,
+            to: 'Bạn',
+            amount: debt.amount,
+            status: SettlementStatus.pending,
+            fromAvatar: fromAvatar,
+            toAvatar: 'You',
+          ),
+        );
+      }
+    }
+
+    userBalance = totalPayment - totalDebt;
   }
 
   void _toggleSettlement(int id) {
@@ -258,13 +389,6 @@ class _BalanceSettlementScreenState extends State<BalanceSettlementScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                   // Zero state check
-                  if (settlements.isEmpty && userBalance.abs() < 1000)
-                     const Padding(
-                         padding: EdgeInsets.all(20),
-                         child: Center(child: Text('Mọi khoản nợ đã được thanh toán!', style: TextStyle(color: Colors.grey))),
-                     ),
-
                   // Balance Summary Card
                   _buildBalanceSummaryCard(),
                   const SizedBox(height: 20),
@@ -274,17 +398,41 @@ class _BalanceSettlementScreenState extends State<BalanceSettlementScreen> {
                   const SizedBox(height: 24),
 
                   // Settlement Details Header
-                  if (settlements.isNotEmpty) ...[
+                  if (settlements.isEmpty && dataLoaded)
                     const Padding(
-                        padding: EdgeInsets.only(bottom: 12),
-                        child: Text(
+                      padding: EdgeInsets.symmetric(vertical: 40),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              size: 48,
+                              color: Colors.green,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              'Tất cả khoản nợ đã được thanh toán!',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else if (settlements.isNotEmpty) ...[
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 12),
+                      child: Text(
                         'Chi tiết thanh toán',
                         style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
                         ),
-                        ),
+                      ),
                     ),
 
                     // Settlement Items
@@ -473,7 +621,10 @@ class _BalanceSettlementScreenState extends State<BalanceSettlementScreen> {
                       radius: 24,
                       backgroundColor: _getAvatarColor(settlement.fromAvatar),
                       child: Text(
-                        settlement.fromAvatar == 'You' || settlement.fromAvatar == 'Bạn' ? 'You' : settlement.fromAvatar,
+                        settlement.fromAvatar == 'You' ||
+                                settlement.fromAvatar == 'Bạn'
+                            ? 'You'
+                            : settlement.fromAvatar,
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -500,7 +651,10 @@ class _BalanceSettlementScreenState extends State<BalanceSettlementScreen> {
                       radius: 24,
                       backgroundColor: _getAvatarColor(settlement.toAvatar),
                       child: Text(
-                        settlement.toAvatar == 'You' || settlement.toAvatar == 'Bạn' ? 'You' : settlement.toAvatar,
+                        settlement.toAvatar == 'You' ||
+                                settlement.toAvatar == 'Bạn'
+                            ? 'You'
+                            : settlement.toAvatar,
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -673,11 +827,11 @@ class Settlement {
 }
 
 class _Debt {
-    final int from; // Debtor
-    final int to; // Creditor
-    final double amount;
-    
-    _Debt(this.from, this.to, this.amount);
+  final int from; // Debtor
+  final int to; // Creditor
+  final double amount;
+
+  _Debt(this.from, this.to, this.amount);
 }
 
 enum SettlementStatus { pending, settled, cancelled }

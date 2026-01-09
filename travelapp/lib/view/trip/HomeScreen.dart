@@ -7,6 +7,7 @@ import 'package:travelapp/view/auth/LoginScreen.dart';
 import 'package:travelapp/view/user/ProfileScreen.dart';
 import 'package:travelapp/models/user_model.dart';
 import 'package:travelapp/view/trip/CreateTripScreen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -57,18 +58,51 @@ class _HomeScreenState extends State<HomeScreen> {
                       ListView.builder(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         itemCount: viewModel.trips.length + 1,
-                        itemBuilder: (context, index) {
+                        itemBuilder: (itemContext, index) {
                           if (index == viewModel.trips.length)
                             return const SizedBox(height: 80);
                           final trip = viewModel.trips[index];
                           return GestureDetector(
-                            onTap: () {
-                              Navigator.push(
+                            onTap: () async {
+                              print("DEBUG: Going to TripDashboard");
+                              // Use the State's context, which is stable
+                              await Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => TripDashboard(tripId: trip.id),
                                 ),
                               );
+                              
+                              print("DEBUG: Returned from TripDashboard");
+                              // Check State's mounted property
+                              if (!mounted) {
+                                print("DEBUG: HomeScreen State is NOT mounted. Aborting refresh.");
+                                return;
+                              }
+                              
+                              print("DEBUG: State mounted. Getting AuthViewModel...");
+                              final authVM = Provider.of<AuthViewModel>(context, listen: false);
+                              int? userId = authVM.userId;
+
+                              print("DEBUG: Provider userId: $userId");
+
+                              if (userId == null) {
+                                print("DEBUG: Provider userId unavailable, checking SharedPreferences...");
+                                try {
+                                  final prefs = await SharedPreferences.getInstance();
+                                  userId = prefs.getInt('auth_user_id');
+                                  print("DEBUG: SharedPreferences userId: $userId");
+                                } catch (e) {
+                                  print("DEBUG: Error reading SharedPreferences: $e");
+                                }
+                              }
+
+                              if (userId != null) {
+                                  print("DEBUG: Executing fetchTrips for user $userId");
+                                  Provider.of<TripViewModel>(context, listen: false).fetchTrips(userId);
+                              } else {
+                                  print("DEBUG: FATAL - Could not determine userId for refresh.");
+                              }
                             },
                             child: _TripCard(
                               imageUrl: trip.coverImage.isNotEmpty 

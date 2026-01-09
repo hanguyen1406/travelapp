@@ -40,20 +40,16 @@ public interface UserRepository extends PagingAndSortingRepository<User, Long> {
 	Page<User> findByNameAndSurname(@Param("name") String name, @Param("surname") String surname,
 			@Param("roleId") String roleId, Pageable pageable);
 
-	@Query(value = "SELECT COUNT(*) FROM trips WHERE created_by = :userId", nativeQuery = true)
+	@Query("SELECT COUNT(t) FROM Trip t WHERE t.createdBy.id = :userId")
 	int getTotalTripsByUser(@Param("userId") Long userId);
 
-	@Query(value = "SELECT COUNT(*) FROM trips WHERE created_by = :userId AND end_date < NOW()", nativeQuery = true)
+	@Query("SELECT COUNT(t) FROM Trip t WHERE t.createdBy.id = :userId AND t.endDate < CURRENT_TIMESTAMP")
 	int getCompletedTripsByUser(@Param("userId") Long userId);
 
-	@Query(value = "SELECT COUNT(DISTINCT i.destination) FROM trips t " +
-			"INNER JOIN itineraries i ON t.id = i.trip_id " +
-			"WHERE t.created_by = :userId", nativeQuery = true)
+	@Query("SELECT COUNT(DISTINCT i.country) FROM Trip t JOIN t.itineraries i WHERE t.createdBy.id = :userId")
 	int getTotalCountriesByUser(@Param("userId") Long userId);
 
-	@Query(value = "SELECT COUNT(DISTINCT i.city) FROM trips t " +
-			"INNER JOIN itineraries i ON t.id = i.trip_id " +
-			"WHERE t.created_by = :userId", nativeQuery = true)
+	@Query("SELECT COUNT(DISTINCT i.city) FROM Trip t JOIN t.itineraries i WHERE t.createdBy.id = :userId")
 	int getTotalCitiesByUser(@Param("userId") Long userId);
 
 }

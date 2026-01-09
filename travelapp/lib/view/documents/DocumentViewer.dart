@@ -1,6 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Added
 import '../../repository/document_repository.dart';
+import '../../utils/app_config.dart'; // Added
 
 class DocumentViewer extends StatefulWidget {
   final Document document;
@@ -18,11 +20,124 @@ class _DocumentViewerState extends State<DocumentViewer> {
   late bool isImportant;
   bool showMenu = false;
   bool isDeleting = false;
+  String? _token;
 
   @override
   void initState() {
     super.initState();
     isImportant = widget.document.isImportant;
+    _loadToken();
+  }
+
+  Future<void> _loadToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _token = prefs.getString('auth_token');
+    });
+  }
+
+  Widget _buildDocumentPreview() {
+    final doc = widget.document;
+    
+    // Debug logic
+    print('🔍 [Preview] Name: ${doc.name}');
+    print('🔍 [Preview] Type: ${doc.type}');
+    print('🔍 [Preview] Url: ${doc.url}');
+
+    final isImage = (doc.type != null && doc.type!.toLowerCase().contains('image')) ||
+        doc.name.toLowerCase().endsWith('.jpg') ||
+        doc.name.toLowerCase().endsWith('.jpeg') ||
+        doc.name.toLowerCase().endsWith('.png') ||
+        doc.name.toLowerCase().endsWith('.webp') ||
+        (doc.originalFileName != null && (
+          doc.originalFileName!.toLowerCase().endsWith('.jpg') ||
+          doc.originalFileName!.toLowerCase().endsWith('.jpeg') ||
+          doc.originalFileName!.toLowerCase().endsWith('.png') ||
+          doc.originalFileName!.toLowerCase().endsWith('.webp')
+        ));
+        
+    print('🔍 [Preview] isImage: $isImage');
+
+    if (isImage && doc.url != null) {
+      // Construct full URL if it's relative
+      String imageUrl = doc.url!;
+      if (!imageUrl.startsWith('http')) {
+        // Remove text '/api' if repeated or just join correctly
+        if (imageUrl.startsWith('/')) {
+             imageUrl = '${AppConfig.baseUrl.replaceAll("/api", "")}$imageUrl';
+        } else {
+             imageUrl = '${AppConfig.baseUrl}/$imageUrl';
+        }
+      }
+      
+      print('🖼️ [DocumentViewer] Final Image URL: $imageUrl');
+      print('🔑 [DocumentViewer] Token: ${_token != null ? "Yes" : "No"}');
+
+      return Image.network(
+        imageUrl,
+        fit: BoxFit.contain,
+        headers: {
+          'ngrok-skip-browser-warning': 'true',
+          if (_token != null) 'Authorization': 'Bearer $_token',
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Center(
+            child: CircularProgressIndicator(
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded /
+                      loadingProgress.expectedTotalBytes!
+                  : null,
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          print('❌ [DocumentViewer] Image load error: $error');
+          print('❌ [DocumentViewer] StackTrace: $stackTrace');
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+                _buildPlaceholder(),
+                const SizedBox(height: 8),
+                Text('Lỗi: $error', style: const TextStyle(color: Colors.red, fontSize: 10), textAlign: TextAlign.center),
+            ],
+          );
+        },
+      );
+    }
+    
+    return _buildPlaceholder();
+  }
+
+  Widget _buildPlaceholder() {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: Colors.grey.shade300,
+            style: BorderStyle.solid,
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text("📄", style: TextStyle(fontSize: 48)),
+              const SizedBox(height: 8),
+              const Text("Xem trước tài liệu"),
+              const SizedBox(height: 4),
+              Text(
+                widget.document.name,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _deleteDocument() async {
@@ -153,37 +268,14 @@ class _DocumentViewerState extends State<DocumentViewer> {
                   padding: const EdgeInsets.all(16),
                   child: Container(
                     height: 400,
+                    width: double.infinity,
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(24),
                     ),
-                    child: Center(
-                      child: Container(
-                        margin: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: Colors.grey.shade300,
-                            style: BorderStyle.solid,
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Text("📄", style: TextStyle(fontSize: 48)),
-                              const SizedBox(height: 8),
-                              const Text("Xem trước tài liệu"),
-                              const SizedBox(height: 4),
-                              Text(
-                                widget.document.name,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(color: Colors.grey),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: _buildDocumentPreview(),
                     ),
                   ),
                 ),

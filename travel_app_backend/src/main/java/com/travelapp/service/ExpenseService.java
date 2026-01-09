@@ -2,7 +2,6 @@ package com.travelapp.service;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,6 +53,15 @@ public class ExpenseService {
         expense.setTrip(trip);
         expense.setExpenseDate(expenseDTO.getExpenseDate() != null ? expenseDTO.getExpenseDate() : new Date());
         expense.setCreatedAt(new Date());
+        
+        // Set split method
+        if (expenseDTO.getSplitMethod() != null) {
+            try {
+                expense.setSplitMethod(Expense.SplitMethod.valueOf(expenseDTO.getSplitMethod()));
+            } catch (IllegalArgumentException e) {
+                expense.setSplitMethod(Expense.SplitMethod.EVEN);
+            }
+        }
 
         // Save expense first to get ID
         expense = expenseRepository.save(expense);
@@ -83,6 +91,11 @@ public class ExpenseService {
             expense.setSplits(splits);
             expense = expenseRepository.save(expense);
         }
+        
+        System.out.println("✅ [ExpenseService] Created expense ID:" + expense.getId() + 
+                          ", Amount:" + expense.getAmount() + 
+                          ", Splits:" + (expense.getSplits() != null ? expense.getSplits().size() : 0) +
+                          ", SplitMethod:" + expense.getSplitMethod());
 
         return mapToDTO(expense);
     }

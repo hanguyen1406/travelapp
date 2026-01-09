@@ -19,15 +19,15 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     List<Expense> findByTrip(Trip trip);
 
     /**
-     * Find all expenses by trip ID
+     * Find all expenses by trip ID with splits eagerly loaded
      */
-    @Query("SELECT e FROM Expense e WHERE e.trip.id = :tripId ORDER BY e.expenseDate DESC")
+    @Query("SELECT DISTINCT e FROM Expense e LEFT JOIN FETCH e.splits WHERE e.trip.id = :tripId ORDER BY e.expenseDate DESC")
     List<Expense> findByTripId(@Param("tripId") Long tripId);
 
     /**
-     * Find expenses by trip and category
+     * Find expenses by trip and category with splits eagerly loaded
      */
-    @Query("SELECT e FROM Expense e WHERE e.trip.id = :tripId AND e.category = :category ORDER BY e.expenseDate DESC")
+    @Query("SELECT DISTINCT e FROM Expense e LEFT JOIN FETCH e.splits WHERE e.trip.id = :tripId AND e.category = :category ORDER BY e.expenseDate DESC")
     List<Expense> findByTripIdAndCategory(@Param("tripId") Long tripId, @Param("category") String category);
 
     /**

@@ -39,8 +39,18 @@ public class User {
 	private Boolean email_verified = false;
 	private String phone;
 	private Date dateOfBirth;
+	private Date createdAt;
 
 	public User() {
+		this.createdAt = new Date();
+	}
+
+	public Date getCreatedAt() {
+		return createdAt;
+	}
+
+	public void setCreatedAt(Date createdAt) {
+		this.createdAt = createdAt;
 	}
 
 	public String getPhone() {
@@ -74,6 +84,7 @@ public class User {
 		this.email_verified = email_verified;
 		this.phone = phone;
 		this.dateOfBirth = dateOfBirth;
+		this.createdAt = new Date();
 	}
 
 	public int getStatus() {

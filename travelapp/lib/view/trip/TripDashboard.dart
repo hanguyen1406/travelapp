@@ -46,7 +46,7 @@ class _TripDashboardState extends State<TripDashboard> {
         if (trip == null) {
           return Scaffold(
             appBar: AppBar(title: Text("Error")),
-            body: Center(child: Text(viewModel.error ?? "Trip not found")),
+            body: Center(child: Text(viewModel.detailError ?? "Trip not found")),
           );
         }
 
@@ -93,7 +93,10 @@ class _TripDashboardState extends State<TripDashboard> {
                   backgroundColor: Colors.black26,
                   child: IconButton(
                     icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () {
+                      print("DEBUG: TripDashboard Back Arrow Pressed");
+                      Navigator.pop(context, true);
+                    },
                   ),
                 ),
               ),
@@ -110,13 +113,78 @@ class _TripDashboardState extends State<TripDashboard> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    CircleAvatar(
-                      backgroundColor: Colors.black26,
-                      child: IconButton(
+                      PopupMenuButton<String>(
                         icon: const Icon(Icons.more_vert, color: Colors.white),
-                        onPressed: () {},
+                        onSelected: (String result) {
+                          if (result == 'delete') {
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext dialogContext) {
+                                return AlertDialog(
+                                  title: const Text("Xóa chuyến đi"),
+                                  content: const Text(
+                                      "Bạn có chắc chắn muốn xóa chuyến đi này không? Hành động này không thể hoàn tác."),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(dialogContext).pop();
+                                      },
+                                      child: const Text("Hủy"),
+                                    ),
+                                    TextButton(
+                                      onPressed: () async {
+                                        // 1. Close the dialog using dialogContext
+                                        Navigator.of(dialogContext).pop();
+                                        
+                                        // 2. Perform delete operation using parent context for provider
+                                        final success = await Provider.of<TripViewModel>(
+                                          context,
+                                          listen: false,
+                                        ).deleteTrip(trip.id);
+
+                                        // 3. Handle result
+                                        if (success) {
+                                          if (mounted) {
+                                            print("DEBUG: Deletion successful, popping TripDashboard");
+                                            // Pop the TripDashboard screen using parent context
+                                            Navigator.of(context).pop(true); 
+                                            
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text("Đã xóa chuyến đi thành công")),
+                                            );
+                                          } else {
+                                             print("DEBUG: Widget not mounted after delete");
+                                          }
+                                        } else {
+                                           if (mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(content: Text(viewModel.error ?? "Lỗi khi xóa")),
+                                            );
+                                           }
+                                        }
+                                      },
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: Colors.red,
+                                      ),
+                                      child: const Text("Xóa"),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          }
+                        },
+                        itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                          const PopupMenuItem<String>(
+                            value: 'delete',
+                            child: ListTile(
+                              leading: Icon(Icons.delete, color: Colors.red),
+                              title: Text('Xóa chuyến đi', style: TextStyle(color: Colors.red)),
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
                   ],
                 ),
               ),

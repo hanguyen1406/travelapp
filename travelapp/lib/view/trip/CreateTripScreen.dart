@@ -74,6 +74,14 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
       );
       return;
     }
+    
+    // Check if end date is before start date
+    if (_endDate!.isBefore(_startDate!)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Ngày về không được nhỏ hơn ngày đi!')),
+        );
+        return;
+    }
 
     final authVM = Provider.of<AuthViewModel>(context, listen: false);
     final body = {
@@ -409,7 +417,14 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                           firstDate: DateTime(2020),
                           lastDate: DateTime(2100),
                         );
-                        if (picked != null) setState(() => _startDate = picked);
+                        if (picked != null) {
+                          setState(() {
+                            _startDate = picked;
+                            if (_endDate != null && _endDate!.isBefore(_startDate!)) {
+                              _endDate = null;
+                            }
+                          });
+                        }
                       },
                       child: AbsorbPointer(
                         child: TextField(
@@ -440,10 +455,13 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                   Expanded(
                     child: GestureDetector(
                       onTap: () async {
+                        final initialDate = _endDate ?? _startDate ?? DateTime.now();
+                        final firstDate = _startDate ?? DateTime.now();
+                        
                         final picked = await showDatePicker(
                           context: context,
-                          initialDate: DateTime.now(),
-                          firstDate: DateTime(2020),
+                          initialDate: initialDate.isBefore(firstDate) ? firstDate : initialDate,
+                          firstDate: firstDate, // Restrict selection to start date onwards
                           lastDate: DateTime(2100),
                         );
                         if (picked != null) setState(() => _endDate = picked);

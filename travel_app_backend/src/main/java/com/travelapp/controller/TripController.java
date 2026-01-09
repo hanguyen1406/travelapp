@@ -55,4 +55,14 @@ public class TripController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteTrip(@PathVariable Long id) {
+        try {
+            tripService.deleteTrip(id);
+            return ResponseEntity.ok(new com.travelapp.model.MessageResponse("success", "Trip deleted successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new com.travelapp.model.MessageResponse("error", e.getMessage()));
+        }
+    }
 }
