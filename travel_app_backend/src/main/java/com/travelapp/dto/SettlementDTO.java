@@ -6,6 +6,8 @@ public class SettlementDTO {
     private Long toUserId;
     private String toUserName;
     private Double amount;
+    private Boolean isPaid;
+    private String status;
 
     public SettlementDTO() {}
 
@@ -15,6 +17,8 @@ public class SettlementDTO {
         this.toUserId = toUserId;
         this.toUserName = toUserName;
         this.amount = amount;
+        this.isPaid = false;
+        this.status = "pending";
     }
 
     public Long getFromUserId() { return fromUserId; }
@@ -31,4 +35,10 @@ public class SettlementDTO {
 
     public Double getAmount() { return amount; }
     public void setAmount(Double amount) { this.amount = amount; }
+
+    public Boolean getIsPaid() { return isPaid; }
+    public void setIsPaid(Boolean isPaid) { this.isPaid = isPaid; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 }
