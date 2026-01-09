@@ -14,7 +14,7 @@ class NetworkApiServices extends BaseApiServices {
             Uri.parse(url),
             headers: {'ngrok-skip-browser-warning': 'true'},
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 30));
       responseJson = returnResponse(response);
     } on SocketException {
       throw FetchDataException('No Internet Connection');
@@ -37,7 +37,7 @@ class NetworkApiServices extends BaseApiServices {
               'ngrok-skip-browser-warning': 'true',
             },
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 30));
       responseJson = returnResponse(response);
     } on SocketException {
       throw FetchDataException('No Internet Connection');
@@ -60,7 +60,7 @@ class NetworkApiServices extends BaseApiServices {
               'ngrok-skip-browser-warning': 'true',
             },
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 30));
       responseJson = returnResponse(response);
     } on SocketException {
       throw FetchDataException('No Internet Connection');
@@ -88,7 +88,7 @@ class NetworkApiServices extends BaseApiServices {
               'ngrok-skip-browser-warning': 'true',
             },
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 30));
       responseJson = returnResponse(response);
     } on SocketException {
       throw FetchDataException('No Internet Connection');
@@ -111,7 +111,7 @@ class NetworkApiServices extends BaseApiServices {
               'ngrok-skip-browser-warning': 'true',
             },
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 30));
       responseJson = returnResponse(response);
     } on SocketException {
       throw FetchDataException('No Internet Connection');
@@ -139,7 +139,7 @@ class NetworkApiServices extends BaseApiServices {
               'ngrok-skip-browser-warning': 'true',
             },
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 30));
       responseJson = returnResponse(response);
     } on SocketException {
       throw FetchDataException('No Internet Connection');
@@ -158,7 +158,7 @@ class NetworkApiServices extends BaseApiServices {
             Uri.parse(url),
             headers: {'ngrok-skip-browser-warning': 'true'},
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 30));
       responseJson = returnResponse(response);
     } on SocketException {
       throw FetchDataException('No Internet Connection');
@@ -181,7 +181,7 @@ class NetworkApiServices extends BaseApiServices {
               'ngrok-skip-browser-warning': 'true',
             },
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 30));
       responseJson = returnResponse(response);
     } on SocketException {
       throw FetchDataException('No Internet Connection');
