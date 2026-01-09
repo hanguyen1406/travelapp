@@ -93,7 +93,10 @@ class _TripDashboardState extends State<TripDashboard> {
                   backgroundColor: Colors.black26,
                   child: IconButton(
                     icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () {
+                      print("DEBUG: TripDashboard Back Arrow Pressed");
+                      Navigator.pop(context, true);
+                    },
                   ),
                 ),
               ),
