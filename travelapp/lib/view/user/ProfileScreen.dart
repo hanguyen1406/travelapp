@@ -269,7 +269,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   // Menu Items
                   _buildMenuItem(
                     icon: Icons.settings,
-                    title: 'Cải đặt tài khoản',
+                    title: 'Cài đặt tài khoản',
                     onTap: () {
                       // TODO: Navigate to account settings
                     },
